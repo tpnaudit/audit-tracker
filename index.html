@@ -191,7 +191,10 @@ label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bot
       <option value="shLetter">ขาดยืนยัน ผถห.</option>
     </select>
   </div>
-  <div class="lsum" id="listSum"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 4px 10px">
+    <div class="lsum" id="listSum" style="margin:0"></div>
+    <button onclick="exportListExcel()" style="border:none;border-radius:9px;padding:8px 14px;font-size:12.5px;font-weight:700;background:var(--navy2);color:#fff;white-space:nowrap">📤 Export Excel</button>
+  </div>
   <div id="listBox"></div>
   <button id="moreBtn" style="display:none">แสดงเพิ่มเติม…</button>
 </section>
@@ -290,7 +293,7 @@ label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bot
     <div style="font-size:38px;margin-bottom:8px">🔐</div>
     <h1>Audit Tracker</h1>
     <p>ใส่รหัสปลดล็อคเพื่อโหลดข้อมูลงบสอบบัญชี<br>(ใส่ครั้งแรกครั้งเดียว เครื่องนี้จะจำไว้)</p>
-    <input id="pinInput" type="text" placeholder="tpn-xxxx-xxxx" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <input id="pinInput" type="text" placeholder="ใส่รหัส PIN" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false">
     <div class="umsg" id="pinMsg"></div>
     <button class="btn btn-p" onclick="tryUnlock()">🔓 ปลดล็อค</button>
     <button class="skip" onclick="skipUnlock()">เริ่มใช้แบบไม่มีข้อมูลตั้งต้น</button>
@@ -590,6 +593,34 @@ function exportExcel(){
   const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,String(curYear));
   XLSX.writeFile(wb,'Audit '+curYear+' export.xlsx');toast('📤 Export แล้ว '+rs.length+' รายการ');
+}
+/* export current filtered list — for sending to clients/contacts */
+function exportListExcel(){
+  if(typeof XLSX==='undefined'){toast('⚠️ ต้องต่อเน็ตครั้งแรกเพื่อโหลดตัวช่วย Excel');return;}
+  const rs=filtered();
+  if(!rs.length){toast('⚠️ ไม่มีรายการตามที่กรอง');return;}
+  const rows=rs.map((r,i)=>({
+    'ลำดับ':i+1,'กิจการ':r.company,'เลขนิติบุคคล':r.taxId||'',
+    'งบปี':r.fyEnd?fmtD(r.fyEnd):'','สถานะงบ':r.dateSigned?'ลงชื่อแล้ว':'รอลงชื่อ',
+    'วันที่ลงรายชื่อ':r.dateSigned?fmtD(r.dateSigned):'',
+    'ราคา (บาท)':r.fee||0,'หัก ณ ที่จ่าย 3%':r.wht||0,'รับสุทธิ':net(r),
+    'สถานะเงิน':r.paid?'ชำระแล้ว':'ค้างชำระ','ค้างชำระ (บาท)':r.paid?0:net(r),
+    'Auditor':r.auditor||'Poom','Contact':r.contact||'','หมายเหตุ':r.note||''}));
+  /* summary row */
+  rows.push({'กิจการ':'รวม '+rs.length+' งบ',
+    'ราคา (บาท)':rs.reduce((s,r)=>s+(r.fee||0),0),
+    'หัก ณ ที่จ่าย 3%':rs.reduce((s,r)=>s+(r.wht||0),0),
+    'รับสุทธิ':rs.reduce((s,r)=>s+net(r),0),
+    'ค้างชำระ (บาท)':rs.filter(r=>!r.paid).reduce((s,r)=>s+net(r),0)});
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[{wch:5},{wch:42},{wch:15},{wch:12},{wch:10},{wch:13},{wch:11},{wch:13},{wch:11},{wch:10},{wch:13},{wch:10},{wch:14},{wch:20}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'รายการงบ '+curYear);
+  const co=document.getElementById('fContact').value;
+  const st=document.getElementById('fStatus');
+  const stTxt=st.value?' '+st.options[st.selectedIndex].text.replace(/[⏳✍️💸✅]/g,'').trim():'';
+  XLSX.writeFile(wb,'รายการงบ '+curYear+(co?' - '+co:'')+stTxt+'.xlsx');
+  toast('📤 Export แล้ว '+rs.length+' รายการ');
 }
 /* import their original Excel layout (header row contains กิจการ) */
 document.getElementById('impXlsx').addEventListener('change',e=>{
