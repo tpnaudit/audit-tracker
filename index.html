@@ -138,7 +138,11 @@ label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bot
 <header>
   <div class="hrow">
     <div class="htitle">📋 Audit Tracker<small>ทะเบียนงบสอบบัญชี — TPN Audit</small></div>
-    <select id="yearSel"></select>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button id="syncBtn" onclick="syncTap()" title="Sync ข้ามเครื่อง"
+        style="background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);border-radius:10px;padding:6px 9px;font-size:16px;line-height:1;color:#fff">☁️</button>
+      <select id="yearSel"></select>
+    </div>
   </div>
 </header>
 
@@ -276,8 +280,11 @@ label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bot
 
 <!-- ============ DATA ============ -->
 <section class="page" id="pg-data">
+  <h2>☁️ Sync ข้ามเครื่อง (คอม + มือถือ)</h2>
+  <div class="card" id="syncBox"></div>
+
   <h2>ข้อมูล & สำรองข้อมูล</h2>
-  <div class="note">💡 ข้อมูลเก็บอยู่ใน<b>เครื่องนี้</b> (localStorage ของ browser) — ถ้าจะใช้ข้ามเครื่อง/มือถือ ให้ Export JSON จากเครื่องหนึ่งแล้ว Import ในอีกเครื่อง แนะนำ Export สำรองไว้เป็นระยะ</div>
+  <div class="note">💡 ข้อมูลเก็บใน localStorage ของแต่ละเครื่อง — ถ้าเปิด Sync ไว้ ทุกเครื่องจะดึง/ส่งข้อมูลหากันอัตโนมัติผ่าน cloud (เข้ารหัสด้วย PIN ก่อนส่งเสมอ) แนะนำ Export JSON สำรองไว้เป็นระยะอยู่ดี</div>
   <button class="dbtn" onclick="exportExcel()"><span class="ico">📤</span><span><span class="t">Export เป็น Excel</span><br><span class="d">ดาวน์โหลดข้อมูลปีที่เลือกเป็นไฟล์ .xlsx โครงเดียวกับไฟล์เดิม</span></span></button>
   <button class="dbtn" onclick="document.getElementById('impXlsx').click()"><span class="ico">📥</span><span><span class="t">Import จาก Excel</span><br><span class="d">อ่านไฟล์ Audit 25xx.xlsx (โครงเดิม) — อัพเดทรายที่มีอยู่ / เพิ่มรายใหม่</span></span></button>
   <input type="file" id="impXlsx" accept=".xlsx,.xls" style="display:none">
@@ -325,7 +332,11 @@ try{
   else if(window.SEED_DATA)records=window.SEED_DATA;
   else if(window.SEED_ENC)needUnlock=true;
 }catch(e){records=window.SEED_DATA||[];}
-function save(){try{localStorage.setItem(LS_KEY,JSON.stringify({version:2,records,lists}));}catch(e){toast('⚠️ บันทึกไม่สำเร็จ: พื้นที่เต็ม');}}
+function save(){
+  try{localStorage.setItem(LS_KEY,JSON.stringify({version:2,records,lists}));}catch(e){toast('⚠️ บันทึกไม่สำเร็จ: พื้นที่เต็ม');}
+  if(typeof scheduleSync==='function')scheduleSync();
+}
+const live=()=>records.filter(r=>!r.deleted);
 function normalizeData(){
   records.forEach(r=>{if(r.opinion==='ความเห็นขัดแย้ง')r.opinion='งบไม่ถูกต้อง';});
   if(!lists)lists={
@@ -349,8 +360,8 @@ const net=r=>(r.fee||0)+(r.incentive||0)-(r.wht||0);
 const isPoom=r=>(r.auditor||'').trim().toLowerCase().replace(/^p'|^พี่|^คุณ/,'')==='poom'||!r.auditor;
 let curYear=null;
 
-function years(){return [...new Set(records.map(r=>r.year))].sort((a,b)=>b-a);}
-function yearRecs(){return records.filter(r=>r.year===curYear);}
+function years(){return [...new Set(live().map(r=>r.year))].sort((a,b)=>b-a);}
+function yearRecs(){return live().filter(r=>r.year===curYear);}
 
 /* ================= toast / nav ================= */
 let toastT;function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2200);}
@@ -520,9 +531,9 @@ function renderList(){
 }
 document.getElementById('moreBtn').addEventListener('click',()=>{listLimit+=100;renderList();});
 function findRec(id){return records.find(r=>r.id===id);}
-function quickSign(id){const r=findRec(id);if(!r)return;r.dateSigned=todayBE();save();renderList();toast('✍️ ลงชื่อ: '+r.company);}
-function quickPaid(id){const r=findRec(id);if(!r)return;r.paid=true;r.datePaid=todayBE();save();renderList();toast('💰 รับเงินแล้ว: '+r.company);}
-function delRec(id){const r=findRec(id);if(!r)return;if(!confirm('ลบ "'+r.company+'" ?'))return;records=records.filter(x=>x.id!==id);save();renderList();toast('ลบแล้ว');}
+function quickSign(id){const r=findRec(id);if(!r)return;r.dateSigned=todayBE();r.updatedAt=Date.now();save();renderList();toast('✍️ ลงชื่อ: '+r.company);}
+function quickPaid(id){const r=findRec(id);if(!r)return;r.paid=true;r.datePaid=todayBE();r.updatedAt=Date.now();save();renderList();toast('💰 รับเงินแล้ว: '+r.company);}
+function delRec(id){const r=findRec(id);if(!r)return;if(!confirm('ลบ "'+r.company+'" ?'))return;r.deleted=true;r.updatedAt=Date.now();save();renderList();toast('ลบแล้ว');}
 
 /* ================= form ================= */
 const F=id=>document.getElementById(id);
@@ -572,7 +583,7 @@ function saveForm(){
   const company=F('f_company').value.trim();
   if(!company){toast('⚠️ กรุณาใส่ชื่อกิจการ');F('f_company').focus();return;}
   const id=F('f_id').value;
-  const rec=id?findRec(id):{id:'r'+Date.now()};
+  const rec=id?findRec(id):{id:'r'+Date.now()+Math.random().toString(36).slice(2,6)};
   Object.assign(rec,{
     year:+F('f_year').value||curYear,company,taxId:F('f_taxId').value.trim(),
     auditor:F('f_auditor').value.trim()||'Poom',contact:F('f_contact').value.trim(),
@@ -584,6 +595,7 @@ function saveForm(){
     paid:F('f_paid').checked,datePaid:F('f_datePaid').value,
     docs:Object.fromEntries(Object.keys(DOCS).map(k=>[k,F('f_doc_'+k).checked])),
     note:F('f_note').value.trim(),
+    updatedAt:Date.now(),
   });
   if(!id)records.push(rec);
   normalizeData();
@@ -706,6 +718,7 @@ function importWB(wb,fname){
         whtCert:yes(gx(row,'ได้รับใบหักณที่จ่าย')),shLetter:yes(gx(row,'ได้รับหนังสือยืนยันผถหไทย(น้องปูน)','ได้รับหนังสือยืนยันผถหไทย'))},
       opinion:String(gx(row,'Remark')||'').trim(),note:rec.note||'',revenue:rec.revenue||'',
       poomShare:rec.poomShare||0,auditorShare:rec.auditorShare||0,
+      deleted:false,updatedAt:Date.now(),
     });
     if(isNew)added++;else updated++;
   }
@@ -714,6 +727,7 @@ function importWB(wb,fname){
   toast(`📥 นำเข้าแล้ว: ใหม่ ${added} / อัพเดท ${updated} (ปี ${yr})`);
 }
 function resetAll(){
+  if(syncCfg&&syncCfg.token){toast('⚠️ กำลัง Sync อยู่ — กด "เลิกเชื่อมต่อ" ก่อน ไม่งั้นข้อมูลจะถูกดึงกลับจาก cloud');return;}
   if(!confirm('ลบข้อมูลทั้งหมด '+records.length+' รายการ แล้วกลับไปใช้ข้อมูลตั้งต้น?'))return;
   if(!confirm('ยืนยันอีกครั้ง — ข้อมูลที่แก้ไข/เพิ่มเองจะหายทั้งหมด'))return;
   records=(window.SEED_DATA||[]).map(r=>({...r,docs:{...r.docs}}));
@@ -722,8 +736,8 @@ function resetAll(){
 }
 function renderDataStat(){
   const ys=years();
-  document.getElementById('dataStat').innerHTML='ทั้งหมด '+fmtN(records.length)+' รายการ — '+ys.map(y=>`ปี ${y}: ${fmtN(records.filter(r=>r.year===y).length)} งบ`).join(' | ');
-  renderLists();
+  document.getElementById('dataStat').innerHTML='ทั้งหมด '+fmtN(live().length)+' รายการ — '+ys.map(y=>`ปี ${y}: ${fmtN(live().filter(r=>r.year===y).length)} งบ`).join(' | ');
+  renderLists();renderSyncBox();
 }
 
 /* ================= name lists manager ================= */
@@ -746,12 +760,156 @@ function addName(cat){
   const el=document.getElementById('add_'+cat);const v=el.value.trim();
   if(!v)return;
   if(lists[cat].includes(v)){toast('⚠️ มีชื่อนี้อยู่แล้ว');return;}
-  lists[cat].push(v);lists[cat].sort();save();renderLists();toast('＋ เพิ่ม "'+v+'" แล้ว');
+  lists[cat].push(v);lists[cat].sort();lists.updatedAt=Date.now();save();renderLists();toast('＋ เพิ่ม "'+v+'" แล้ว');
 }
 function delName(cat,i){
   const v=lists[cat][i];
-  lists[cat].splice(i,1);save();renderLists();toast('✕ เอา "'+v+'" ออกจากลิสต์แล้ว');
+  lists[cat].splice(i,1);lists.updatedAt=Date.now();save();renderLists();toast('✕ เอา "'+v+'" ออกจากลิสต์แล้ว');
 }
+
+/* ================= cloud sync (GitHub) ================= */
+const SYNC_KEY='auditTrackerSync';
+const GH_FILE='https://api.github.com/repos/tpnaudit/audit-tracker/contents/data.enc.json';
+const GH_BRANCH='data';
+let syncCfg=null,syncing=false,syncTimer=null;
+try{syncCfg=JSON.parse(localStorage.getItem(SYNC_KEY)||'null');}catch(e){}
+function saveSync(){localStorage.setItem(SYNC_KEY,JSON.stringify(syncCfg));}
+
+function u8b64(u8){let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s);}
+function b64u8(b){const s=atob(b);const u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;}
+const keyCache={};
+async function deriveKey(pin,saltB64,iter){
+  const ck=saltB64+'|'+iter;
+  if(!keyCache[ck]){
+    const km=await crypto.subtle.importKey('raw',new TextEncoder().encode(pin),'PBKDF2',false,['deriveKey']);
+    keyCache[ck]=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64u8(saltB64),iterations:iter,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+  }
+  return keyCache[ck];
+}
+async function decPayload(e,pin){
+  const key=await deriveKey(pin,e.salt,e.iter);
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64u8(e.iv)},key,b64u8(e.ct));
+  return JSON.parse(new TextDecoder().decode(pt));
+}
+async function encPayload(obj,pin){
+  if(!syncCfg.salt)syncCfg.salt=u8b64(crypto.getRandomValues(new Uint8Array(16)));
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+  const key=await deriveKey(pin,syncCfg.salt,600000);
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(JSON.stringify(obj))));
+  return {v:1,iter:600000,salt:syncCfg.salt,iv:u8b64(iv),ct:u8b64(ct)};
+}
+const ghHdr=()=>({Authorization:'Bearer '+syncCfg.token,Accept:'application/vnd.github+json'});
+async function ghGet(){
+  const res=await fetch(GH_FILE+'?ref='+GH_BRANCH+'&t='+Date.now(),{headers:ghHdr()});
+  if(res.status===404)return null;
+  if(!res.ok)throw new Error('GitHub GET '+res.status);
+  const j=await res.json();
+  if(!j.content&&j.download_url){j.text=await (await fetch(j.download_url)).text();}
+  else j.text=atob(j.content.replace(/\n/g,''));
+  return j;
+}
+async function ghPut(text,sha){
+  const body={message:'sync '+new Date().toISOString(),content:btoa(text),branch:GH_BRANCH};
+  if(sha)body.sha=sha;
+  const res=await fetch(GH_FILE,{method:'PUT',headers:ghHdr(),body:JSON.stringify(body)});
+  if(!res.ok)throw new Error('GitHub PUT '+res.status);
+  return res.json();
+}
+function mergeData(remote){
+  const map=new Map(records.map(r=>[r.id,r]));
+  (remote.records||[]).forEach(rr=>{
+    const lr=map.get(rr.id);
+    if(!lr)records.push(rr);
+    else if((rr.updatedAt||0)>(lr.updatedAt||0))Object.assign(lr,rr);
+  });
+  if(remote.lists&&(remote.lists.updatedAt||0)>((lists&&lists.updatedAt)||0))lists=remote.lists;
+}
+function scheduleSync(){
+  if(!syncCfg||!syncCfg.token||syncing)return;
+  clearTimeout(syncTimer);syncTimer=setTimeout(()=>syncNow(false),4000);
+}
+async function syncNow(manual,retried){
+  if(!syncCfg||!syncCfg.token||!syncCfg.pin){if(manual){toast('⚠️ ยังไม่ได้ตั้งค่า Sync');showPage('pg-data');}return;}
+  if(syncing)return;
+  syncing=true;setSyncUI('⏳');
+  try{
+    const remote=await ghGet();
+    let sha=null;
+    if(remote){
+      sha=remote.sha;
+      const data=await decPayload(JSON.parse(remote.text),syncCfg.pin);
+      mergeData(data);normalizeData();
+      try{localStorage.setItem(LS_KEY,JSON.stringify({version:2,records,lists}));}catch(e){}
+    }
+    const enc=await encPayload({records,lists,pushedAt:Date.now()},syncCfg.pin);
+    await ghPut(JSON.stringify(enc),sha);
+    syncCfg.lastSync=Date.now();saveSync();
+    setSyncUI('ok');
+    renderYearSel();
+    const pg=document.querySelector('.page.show').id;
+    if(pg==='pg-dash')renderDash();else if(pg==='pg-list')renderList();else if(pg==='pg-data')renderDataStat();
+    if(manual)toast('☁️ Sync สำเร็จ ('+fmtN(live().length)+' งบ)');
+  }catch(err){
+    console.error('sync:',err);
+    syncing=false;
+    if(String(err.message).includes('409')&&!retried)return syncNow(manual,true);
+    if(String(err.name)==='OperationError'){setSyncUI('err');if(manual)toast('⚠️ PIN ไม่ตรงกับข้อมูลบน cloud');return;}
+    setSyncUI('err');
+    if(manual)toast('⚠️ Sync ไม่สำเร็จ: '+err.message);
+  }finally{syncing=false;}
+}
+function setSyncUI(st){
+  const b=document.getElementById('syncBtn');
+  b.textContent=st==='⏳'?'⏳':st==='err'?'☁️⚠️':st==='ok'?'☁️✓':'☁️';
+  if(document.getElementById('pg-data').classList.contains('show'))renderSyncBox();
+}
+function syncTap(){(syncCfg&&syncCfg.token)?syncNow(true):showPage('pg-data');}
+function fmtTime(ms){if(!ms)return '-';const d=new Date(ms);return d.getDate()+' '+THM[d.getMonth()]+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+function renderSyncBox(){
+  const el=document.getElementById('syncBox');
+  if(syncCfg&&syncCfg.token){
+    el.innerHTML=`
+      <div style="font-weight:800;color:var(--green);margin-bottom:4px">🟢 เชื่อมต่อแล้ว</div>
+      <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">แก้ไขอะไรจะส่งขึ้น cloud อัตโนมัติ (เข้ารหัสด้วย PIN ก่อนส่ง) · Sync ล่าสุด: ${fmtTime(syncCfg.lastSync)}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-p" style="width:auto;padding:9px 18px;font-size:13.5px" onclick="syncNow(true)">🔄 Sync ตอนนี้</button>
+        <button class="btn btn-g" style="padding:9px 18px;font-size:13.5px" onclick="disconnectSync()">เลิกเชื่อมต่อเครื่องนี้</button>
+      </div>`;
+  }else{
+    el.innerHTML=`
+      <div style="font-size:13px;line-height:1.65;margin-bottom:12px">
+        ทำให้ทุกเครื่อง (คอม/มือถือ) เห็นข้อมูลชุดเดียวกัน ต้องใช้ <b>กุญแจ (token)</b> สร้างครั้งเดียวใช้ได้ทุกเครื่อง:<br>
+        1. เปิด <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" style="color:var(--blue);font-weight:700">github.com/settings/personal-access-tokens/new</a> (ล็อกอิน tpnaudit)<br>
+        2. Token name: <b>audit-sync</b> · Expiration: เลือก <b>Custom</b> ยาวสุด 1 ปี<br>
+        3. Repository access → <b>Only select repositories</b> → เลือก <b>audit-tracker</b><br>
+        4. Permissions → Repository permissions → <b>Contents</b> → <b>Read and write</b><br>
+        5. กด Generate token แล้ว copy (ขึ้นต้น <code>github_pat_</code>) มาวางด้านล่าง</div>
+      <div style="margin-bottom:8px"><label>Token (github_pat_...)</label><input id="syncToken" placeholder="github_pat_xxxx..." autocomplete="off" style="width:100%;padding:9px 10px;border:1.5px solid var(--line);border-radius:10px"></div>
+      <div style="margin-bottom:12px"><label>PIN (ตัวเดียวกับตอนเปิดแอป)</label><input id="syncPin" inputmode="numeric" placeholder="PIN" autocomplete="off" style="width:100%;padding:9px 10px;border:1.5px solid var(--line);border-radius:10px" value="${esc(window._lastPin||'')}"></div>
+      <button class="btn btn-p" onclick="connectSync()">🔗 เชื่อมต่อ</button>
+      <div style="font-size:11.5px;color:var(--muted);margin-top:8px">Token กับ PIN ถูกเก็บไว้ในเครื่องนี้เท่านั้น ไม่ถูกอัพขึ้นเว็บ</div>`;
+  }
+}
+async function connectSync(){
+  const token=document.getElementById('syncToken').value.trim();
+  const pin=document.getElementById('syncPin').value.trim();
+  if(!token||!pin){toast('⚠️ ใส่ Token และ PIN ให้ครบ');return;}
+  syncCfg={token,pin,salt:null,lastSync:null};
+  toast('⏳ กำลังทดสอบการเชื่อมต่อ...');
+  try{
+    const res=await fetch('https://api.github.com/repos/tpnaudit/audit-tracker',{headers:ghHdr()});
+    if(!res.ok)throw new Error('token ใช้ไม่ได้ (HTTP '+res.status+')');
+    saveSync();renderSyncBox();
+    await syncNow(true);
+  }catch(err){syncCfg=null;localStorage.removeItem(SYNC_KEY);toast('⚠️ เชื่อมต่อไม่สำเร็จ: '+err.message);}
+}
+function disconnectSync(){
+  if(!confirm('เลิก Sync เครื่องนี้? (ข้อมูลในเครื่องยังอยู่ และข้อมูลบน cloud ไม่ถูกลบ)'))return;
+  syncCfg=null;localStorage.removeItem(SYNC_KEY);setSyncUI('');renderSyncBox();toast('เลิกเชื่อมต่อแล้ว');
+}
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden&&syncCfg&&syncCfg.token&&(!syncCfg.lastSync||Date.now()-syncCfg.lastSync>60000))syncNow(false);
+});
 
 /* ================= unlock (deployed site) ================= */
 async function tryUnlock(){
@@ -767,6 +925,7 @@ async function tryUnlock(){
     const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b(e.salt),iterations:e.iter,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
     const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b(e.iv)},key,b(e.ct));
     records=JSON.parse(new TextDecoder().decode(pt));
+    window._lastPin=pin;
     save();
     document.getElementById('unlock').style.display='none';
     initApp();toast('🔓 โหลดข้อมูลแล้ว '+records.length+' รายการ');
@@ -782,6 +941,8 @@ document.getElementById('pinInput').addEventListener('keydown',e=>{if(e.key==='E
 function initApp(){
   renderYearSel();fillMonthSel();resetForm();renderDash();
   if(!localStorage.getItem(LS_KEY))save();
+  setSyncUI(syncCfg&&syncCfg.token?'ok':'');
+  if(syncCfg&&syncCfg.token)syncNow(false);
 }
 if(needUnlock){document.getElementById('unlock').style.display='flex';}
 else initApp();
