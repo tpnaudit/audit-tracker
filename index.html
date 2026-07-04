@@ -219,9 +219,18 @@ label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bot
       <div><label>วันที่แจ้ง</label><input id="f_dateNotified" type="date"></div>
       <div><label>วันที่ลงรายชื่อ</label><input id="f_dateSigned" type="date"></div>
       <div><label>ความเห็นผู้สอบ</label><select id="f_opinion">
-        <option value="">ไม่มีเงื่อนไข (ปกติ)</option><option>มีเงื่อนไข</option><option>ไม่แสดงความเห็น</option><option>ความเห็นขัดแย้ง</option>
+        <option value="">ไม่มีเงื่อนไข (ปกติ)</option><option>มีเงื่อนไข</option><option>ไม่แสดงความเห็น</option><option>งบไม่ถูกต้อง</option>
       </select></div>
-      <div class="ck" style="align-self:end"><input type="checkbox" id="f_inSystem"><span>เข้าระบบ (ยื่นภาษี)</span></div>
+      <div><label>รายได้ของงบ</label><select id="f_revenue">
+        <option value="">-</option>
+        <option value="ต่ำกว่า 30 ล้าน">ต่ำกว่า 30 ล้านบาท</option>
+        <option value="30–300 ล้าน">เกิน 30 ล้าน แต่ไม่เกิน 300 ล้านบาท</option>
+        <option value="เกิน 300 ล้าน">300 ล้านบาทขึ้นไป</option>
+      </select></div>
+    </div>
+    <div class="frow half">
+      <div class="ck"><input type="checkbox" id="f_inSystem"><span>เข้าระบบ (ยื่นภาษี)</span></div>
+      <div></div>
     </div>
 
     <div class="fsec">💰 ค่าสอบบัญชี</div>
@@ -277,6 +286,10 @@ label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bot
   <input type="file" id="impJson" accept=".json" style="display:none">
   <button class="dbtn" onclick="resetAll()"><span class="ico">🗑️</span><span><span class="t" style="color:var(--red)">ล้างข้อมูลทั้งหมด</span><br><span class="d">ลบทุกรายการและกลับไปใช้ข้อมูลตั้งต้นจาก Excel</span></span></button>
   <div class="lsum" id="dataStat"></div>
+
+  <h2>จัดการรายชื่อ</h2>
+  <div class="note" style="background:#f0f9ff;border-color:#bae6fd">รายชื่อที่โชว์เป็นตัวเลือกตอนกรอกฟอร์ม — ลบชื่อออกจากลิสต์ไม่กระทบงบที่บันทึกไปแล้ว และพิมพ์ชื่อใหม่ในฟอร์มได้เสมอ (จะถูกเพิ่มเข้าลิสต์อัตโนมัติ)</div>
+  <div id="listMgr"></div>
 </section>
 </main>
 
@@ -305,14 +318,26 @@ label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bot
 <script>
 /* ================= state ================= */
 const LS_KEY='auditTrackerData';
-let records=[],needUnlock=false;
+let records=[],lists=null,needUnlock=false;
 try{
   const raw=localStorage.getItem(LS_KEY);
-  if(raw)records=JSON.parse(raw).records;
+  if(raw){const o=JSON.parse(raw);records=o.records||[];lists=o.lists||null;}
   else if(window.SEED_DATA)records=window.SEED_DATA;
   else if(window.SEED_ENC)needUnlock=true;
 }catch(e){records=window.SEED_DATA||[];}
-function save(){try{localStorage.setItem(LS_KEY,JSON.stringify({version:1,records}));}catch(e){toast('⚠️ บันทึกไม่สำเร็จ: พื้นที่เต็ม');}}
+function save(){try{localStorage.setItem(LS_KEY,JSON.stringify({version:2,records,lists}));}catch(e){toast('⚠️ บันทึกไม่สำเร็จ: พื้นที่เต็ม');}}
+function normalizeData(){
+  records.forEach(r=>{if(r.opinion==='ความเห็นขัดแย้ง')r.opinion='งบไม่ถูกต้อง';});
+  if(!lists)lists={
+    auditors:[...new Set(records.map(r=>r.auditor).filter(Boolean))].sort(),
+    contacts:[...new Set(records.map(r=>r.contact).filter(Boolean))].sort(),
+    assistants:[...new Set(records.map(r=>r.assistantName).filter(Boolean))].sort()};
+}
+function mergeListsFromRecords(){
+  normalizeData();
+  const addTo=(arr,v)=>{if(v&&!arr.includes(v)){arr.push(v);arr.sort();}};
+  records.forEach(r=>{addTo(lists.auditors,r.auditor);addTo(lists.contacts,r.contact);addTo(lists.assistants,r.assistantName);});
+}
 
 const THM=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const DOCS={hard:'ส่ง Hard',elRep:'EL & Rep',confirm:'Confirm',whtCert:'ใบหักฯ',shLetter:'ยืนยัน ผถห.'};
@@ -477,6 +502,7 @@ function renderList(){
         ${r.contact?`<span class="badge b-gray">${esc(r.contact)}</span>`:''}
         ${r.month?`<span class="badge b-gray">รอบ ด.${r.month}</span>`:''}
         ${r.opinion?`<span class="badge b-amber">⚠️ ${esc(r.opinion)}</span>`:''}
+        ${r.revenue?`<span class="badge b-gray">📈 ${esc(r.revenue)}</span>`:''}
         ${r.inSystem?'<span class="badge b-blue">เข้าระบบ</span>':''}
       </div>
       <div class="dts">แจ้ง ${fmtD(r.dateNotified)} · งบปี ${fmtD(r.fyEnd)}${r.datePaid?' · รับเงิน '+fmtD(r.datePaid):''}${r.note?' · '+esc(r.note):''}</div>
@@ -509,15 +535,16 @@ F('f_paid').addEventListener('change',()=>{if(F('f_paid').checked&&!F('f_datePai
 function updNet(){const n=(+F('f_fee').value||0)+(+F('f_incentive').value||0)-(+F('f_wht').value||0);
   F('netBox').textContent='รับสุทธิ: '+fmtB(n)+((+F('f_assistantFee').value||0)>0?' (หลังหักผู้ช่วยเหลือ '+fmtB(n-(+F('f_assistantFee').value||0))+')':'');}
 function fillDatalists(){
-  const dl=(id,vals)=>document.getElementById(id).innerHTML=[...new Set(vals.filter(Boolean))].sort().map(v=>`<option value="${esc(v)}">`).join('');
-  dl('dlAuditor',records.map(r=>r.auditor));dl('dlContact',records.map(r=>r.contact));dl('dlAssistant',records.map(r=>r.assistantName));
+  normalizeData();
+  const dl=(id,vals)=>document.getElementById(id).innerHTML=vals.map(v=>`<option value="${esc(v)}">`).join('');
+  dl('dlAuditor',lists.auditors);dl('dlContact',lists.contacts);dl('dlAssistant',lists.assistants);
 }
 function fillMonthSel(){F('f_month').innerHTML='<option value="">-</option>'+Array.from({length:12},(_,i)=>`<option value="${i+1}">รอบเดือน ${i+1} (${THM[i]})</option>`).join('');}
 function resetForm(){
   F('f_id').value='';document.getElementById('formTitle').textContent='เพิ่มงบใหม่';
   ['f_company','f_taxId','f_auditor','f_contact','f_fyEnd','f_dateNotified','f_dateSigned','f_datePaid','f_assistantName','f_note'].forEach(id=>F(id).value='');
   F('f_year').value=curYear||new Date().getFullYear()+543;
-  F('f_month').value='';F('f_opinion').value='';
+  F('f_month').value='';F('f_opinion').value='';F('f_revenue').value='';
   ['f_fee','f_incentive','f_wht','f_assistantFee','f_poomShare','f_auditorShare'].forEach(id=>F(id).value=0);
   F('f_inSystem').checked=false;F('f_paid').checked=false;
   Object.keys(DOCS).forEach(k=>F('f_doc_'+k).checked=false);
@@ -531,7 +558,7 @@ function editRec(id){
   F('f_id').value=r.id;F('f_company').value=r.company;F('f_taxId').value=r.taxId||'';F('f_year').value=r.year;
   F('f_auditor').value=r.auditor||'Poom';F('f_contact').value=r.contact||'';F('f_month').value=r.month||'';
   F('f_fyEnd').value=r.fyEnd||'';F('f_dateNotified').value=r.dateNotified||'';F('f_dateSigned').value=r.dateSigned||'';
-  F('f_opinion').value=r.opinion||'';F('f_inSystem').checked=!!r.inSystem;
+  F('f_opinion').value=r.opinion||'';F('f_revenue').value=r.revenue||'';F('f_inSystem').checked=!!r.inSystem;
   F('f_fee').value=r.fee||0;F('f_incentive').value=r.incentive||0;F('f_wht').value=r.wht||0;
   F('f_assistantFee').value=r.assistantFee||0;F('f_assistantName').value=r.assistantName||'';
   F('f_poomShare').value=r.poomShare||0;F('f_auditorShare').value=r.auditorShare||0;
@@ -550,7 +577,7 @@ function saveForm(){
     year:+F('f_year').value||curYear,company,taxId:F('f_taxId').value.trim(),
     auditor:F('f_auditor').value.trim()||'Poom',contact:F('f_contact').value.trim(),
     month:+F('f_month').value||null,fyEnd:F('f_fyEnd').value,dateNotified:F('f_dateNotified').value,
-    dateSigned:F('f_dateSigned').value,opinion:F('f_opinion').value,inSystem:F('f_inSystem').checked,
+    dateSigned:F('f_dateSigned').value,opinion:F('f_opinion').value,revenue:F('f_revenue').value,inSystem:F('f_inSystem').checked,
     fee:+F('f_fee').value||0,incentive:+F('f_incentive').value||0,wht:+F('f_wht').value||0,
     assistantFee:+F('f_assistantFee').value||0,assistantName:F('f_assistantName').value.trim(),
     poomShare:+F('f_poomShare').value||0,auditorShare:+F('f_auditorShare').value||0,
@@ -559,13 +586,16 @@ function saveForm(){
     note:F('f_note').value.trim(),
   });
   if(!id)records.push(rec);
+  normalizeData();
+  const addTo=(arr,v)=>{if(v&&!arr.includes(v)){arr.push(v);arr.sort();}};
+  addTo(lists.auditors,rec.auditor);addTo(lists.contacts,rec.contact);addTo(lists.assistants,rec.assistantName);
   save();renderYearSel();toast('💾 บันทึกแล้ว: '+company);
   resetForm();showPage('pg-list');
 }
 
 /* ================= import / export ================= */
 function download(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);}
-function exportJSON(){download('audit-tracker-backup-'+todayBE()+'.json',new Blob([JSON.stringify({version:1,records},null,1)],{type:'application/json'}));toast('🗄️ สำรองข้อมูลแล้ว');}
+function exportJSON(){normalizeData();download('audit-tracker-backup-'+todayBE()+'.json',new Blob([JSON.stringify({version:2,records,lists},null,1)],{type:'application/json'}));toast('🗄️ สำรองข้อมูลแล้ว');}
 document.getElementById('impJson').addEventListener('change',e=>{
   const f=e.target.files[0];if(!f)return;
   const rd=new FileReader();
@@ -573,54 +603,60 @@ document.getElementById('impJson').addEventListener('change',e=>{
     const d=JSON.parse(rd.result);const recs=d.records||d;
     if(!Array.isArray(recs))throw 0;
     if(!confirm('แทนที่ข้อมูลทั้งหมด ('+records.length+' รายการ) ด้วยไฟล์สำรอง ('+recs.length+' รายการ)?'))return;
-    records=recs;save();renderYearSel();renderDash();renderDataStat();toast('♻️ กู้คืนแล้ว '+recs.length+' รายการ');
+    records=recs;lists=d.lists||null;normalizeData();save();renderYearSel();renderDash();renderDataStat();toast('♻️ กู้คืนแล้ว '+recs.length+' รายการ');
   }catch(err){toast('⚠️ ไฟล์ไม่ถูกต้อง');}};
   rd.readAsText(f);e.target.value='';
 });
 function exportExcel(){
   if(typeof XLSX==='undefined'){toast('⚠️ ต้องต่อเน็ตครั้งแรกเพื่อโหลดตัวช่วย Excel');return;}
   const rs=yearRecs();
-  const rows=rs.map((r,i)=>({
-    'No.':i+1,'วันที่แจ้ง':r.dateNotified,'วันที่ลงรายชื่อ':r.dateSigned,'Remark':r.opinion,'Month':r.month||'',
-    'เลขนิติบุคคล':r.taxId,'กิจการ':r.company,'Auditor':r.auditor,'Contact ลูกค้า':r.contact,'งบปี':r.fyEnd,
-    'เข้าระบบ':r.inSystem?'Yes':'No','ราคา':r.fee,'Incentive':r.incentive,'หัก ณ ที่จ่าย':r.wht,
-    'จ้างผู้ช่วย':r.assistantFee,'ชื่อผู้ช่วย':r.assistantName,'รับสุทธิ':net(r),
-    'รับเงินแล้ว':r.paid?'Yes':'No','วันที่รับเงิน':r.datePaid,'ค้างรับ':r.paid?0:net(r),
-    'Poom รับ':r.poomShare||'','ผู้สอบอื่นรับ':r.auditorShare||'',
-    'ส่ง Hard':r.docs&&r.docs.hard?'Yes':'No','ได้รับ EL and Rep Letter ยัง':r.docs&&r.docs.elRep?'Yes':'No',
-    'ได้รับ confirm signed ยัง':r.docs&&r.docs.confirm?'Yes':'No','ได้รับใบหัก ณ ที่จ่าย':r.docs&&r.docs.whtCert?'Yes':'No',
-    'ได้รับหนังสือยืนยันผถหไทย':r.docs&&r.docs.shLetter?'Yes':'No','หมายเหตุ':r.note}));
-  const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();
+  if(!rs.length){toast('⚠️ ไม่มีข้อมูลปีนี้');return;}
+  const yn=v=>v?'Yes':'No';
+  const hdr=['No.','วันที่แจ้ง','วันที่ลงรายชื่อ','Remark','Month','เลขนิติบุคคล','กิจการ','Auditor','Contact ลูกค้า','งบปี',
+    'เข้าระบบ','รายได้ของงบ','ราคา','Incentive','หัก ณ ที่จ่าย','จ้างผู้ช่วย','ชื่อผู้ช่วย','รับสุทธิ','รับเงินแล้ว','วันที่รับเงิน',
+    'ค้างรับ','Poom รับ','ผู้สอบอื่นรับ','ส่ง Hard','ได้รับ EL and Rep Letter','ได้รับ confirm signed','ได้รับใบหัก ณ ที่จ่าย','ได้รับหนังสือยืนยันผถหไทย','หมายเหตุ'];
+  const rows=rs.map((r,i)=>[i+1,r.dateNotified,r.dateSigned,r.opinion,r.month||'',r.taxId,r.company,r.auditor,r.contact,r.fyEnd,
+    yn(r.inSystem),r.revenue||'',r.fee||0,r.incentive||0,r.wht||0,r.assistantFee||0,r.assistantName,0,yn(r.paid),r.datePaid,
+    0,r.poomShare||'',r.auditorShare||'',yn(r.docs&&r.docs.hard),yn(r.docs&&r.docs.elRep),yn(r.docs&&r.docs.confirm),yn(r.docs&&r.docs.whtCert),yn(r.docs&&r.docs.shLetter),r.note]);
+  const totalRow=Array(hdr.length).fill('');totalRow[6]='รวม '+rs.length+' งบ';
+  const ws=XLSX.utils.aoa_to_sheet([hdr,...rows,totalRow]);
+  const lastRow=rows.length+1;                       // แถวข้อมูลสุดท้าย (sheet 1-based)
+  rows.forEach((_,i)=>{const n=i+2;                  // สูตรต่อแถว: รับสุทธิ (R) และ ค้างรับ (U)
+    ws[XLSX.utils.encode_cell({r:i+1,c:17})]={t:'n',f:`M${n}+N${n}-O${n}`};
+    ws[XLSX.utils.encode_cell({r:i+1,c:20})]={t:'n',f:`IF(S${n}="Yes",0,R${n})`};});
+  [12,13,14,15,17,20].forEach(c=>{const L=XLSX.utils.encode_col(c);
+    ws[XLSX.utils.encode_cell({r:lastRow,c})]={t:'n',f:`SUM(${L}2:${L}${lastRow})`};});
+  ws['!cols']=[{wch:5},{wch:11},{wch:11},{wch:12},{wch:6},{wch:15},{wch:42},{wch:10},{wch:14},{wch:11},{wch:8},{wch:14},{wch:10},{wch:9},{wch:11},{wch:10},{wch:12},{wch:10},{wch:9},{wch:11},{wch:10},{wch:10},{wch:11},{wch:8},{wch:10},{wch:10},{wch:10},{wch:10},{wch:20}];
+  const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,String(curYear));
-  XLSX.writeFile(wb,'Audit '+curYear+' export.xlsx');toast('📤 Export แล้ว '+rs.length+' รายการ');
+  XLSX.writeFile(wb,'Audit '+curYear+' export.xlsx');toast('📤 Export แล้ว '+rs.length+' รายการ (มีสูตร)');
 }
 /* export current filtered list — for sending to clients/contacts */
 function exportListExcel(){
   if(typeof XLSX==='undefined'){toast('⚠️ ต้องต่อเน็ตครั้งแรกเพื่อโหลดตัวช่วย Excel');return;}
   const rs=filtered();
   if(!rs.length){toast('⚠️ ไม่มีรายการตามที่กรอง');return;}
-  const rows=rs.map((r,i)=>({
-    'ลำดับ':i+1,'กิจการ':r.company,'เลขนิติบุคคล':r.taxId||'',
-    'งบปี':r.fyEnd?fmtD(r.fyEnd):'','สถานะงบ':r.dateSigned?'ลงชื่อแล้ว':'รอลงชื่อ',
-    'วันที่ลงรายชื่อ':r.dateSigned?fmtD(r.dateSigned):'',
-    'ราคา (บาท)':r.fee||0,'หัก ณ ที่จ่าย 3%':r.wht||0,'รับสุทธิ':net(r),
-    'สถานะเงิน':r.paid?'ชำระแล้ว':'ค้างชำระ','ค้างชำระ (บาท)':r.paid?0:net(r),
-    'Auditor':r.auditor||'Poom','Contact':r.contact||'','หมายเหตุ':r.note||''}));
-  /* summary row */
-  rows.push({'กิจการ':'รวม '+rs.length+' งบ',
-    'ราคา (บาท)':rs.reduce((s,r)=>s+(r.fee||0),0),
-    'หัก ณ ที่จ่าย 3%':rs.reduce((s,r)=>s+(r.wht||0),0),
-    'รับสุทธิ':rs.reduce((s,r)=>s+net(r),0),
-    'ค้างชำระ (บาท)':rs.filter(r=>!r.paid).reduce((s,r)=>s+net(r),0)});
-  const ws=XLSX.utils.json_to_sheet(rows);
-  ws['!cols']=[{wch:5},{wch:42},{wch:15},{wch:12},{wch:10},{wch:13},{wch:11},{wch:13},{wch:11},{wch:10},{wch:13},{wch:10},{wch:14},{wch:20}];
+  const hdr=['ลำดับ','กิจการ','เลขนิติบุคคล','งบปี','สถานะงบ','วันที่ลงรายชื่อ','รายได้ของงบ',
+    'ราคา (บาท)','หัก ณ ที่จ่าย 3%','รับสุทธิ','สถานะเงิน','ค้างชำระ (บาท)','Auditor','Contact','หมายเหตุ'];
+  const rows=rs.map((r,i)=>[i+1,r.company,r.taxId||'',r.fyEnd?fmtD(r.fyEnd):'',r.dateSigned?'ลงชื่อแล้ว':'รอลงชื่อ',
+    r.dateSigned?fmtD(r.dateSigned):'',r.revenue||'',r.fee||0,r.wht||0,0,r.paid?'ชำระแล้ว':'ค้างชำระ',0,
+    r.auditor||'Poom',r.contact||'',r.note||'']);
+  const totalRow=Array(hdr.length).fill('');totalRow[1]='รวม '+rs.length+' งบ';
+  const ws=XLSX.utils.aoa_to_sheet([hdr,...rows,totalRow]);
+  const lastRow=rows.length+1;
+  rows.forEach((_,i)=>{const n=i+2;                  // สูตรต่อแถว: รับสุทธิ (J) และ ค้างชำระ (L)
+    ws[XLSX.utils.encode_cell({r:i+1,c:9})]={t:'n',f:`H${n}-I${n}`};
+    ws[XLSX.utils.encode_cell({r:i+1,c:11})]={t:'n',f:`IF(K${n}="ชำระแล้ว",0,J${n})`};});
+  [7,8,9,11].forEach(c=>{const L=XLSX.utils.encode_col(c);
+    ws[XLSX.utils.encode_cell({r:lastRow,c})]={t:'n',f:`SUM(${L}2:${L}${lastRow})`};});
+  ws['!cols']=[{wch:5},{wch:42},{wch:15},{wch:12},{wch:10},{wch:13},{wch:14},{wch:11},{wch:13},{wch:11},{wch:10},{wch:13},{wch:10},{wch:14},{wch:20}];
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'รายการงบ '+curYear);
   const co=document.getElementById('fContact').value;
   const st=document.getElementById('fStatus');
   const stTxt=st.value?' '+st.options[st.selectedIndex].text.replace(/[⏳✍️💸✅]/g,'').trim():'';
   XLSX.writeFile(wb,'รายการงบ '+curYear+(co?' - '+co:'')+stTxt+'.xlsx');
-  toast('📤 Export แล้ว '+rs.length+' รายการ');
+  toast('📤 Export แล้ว '+rs.length+' รายการ (มีสูตร)');
 }
 /* import their original Excel layout (header row contains กิจการ) */
 document.getElementById('impXlsx').addEventListener('change',e=>{
@@ -668,11 +704,12 @@ function importWB(wb,fname){
       docs:{hard:yes(gx(row,'ส่งHard','ส่ง Hard')),elRep:yes(gx(row,'ได้รับELandRepLetterยัง')),
         confirm:yes(gx(row,'ได้รับconfirmsignedยัง(น้องปูน)','ได้รับconfirmsignedยัง')),
         whtCert:yes(gx(row,'ได้รับใบหักณที่จ่าย')),shLetter:yes(gx(row,'ได้รับหนังสือยืนยันผถหไทย(น้องปูน)','ได้รับหนังสือยืนยันผถหไทย'))},
-      opinion:String(gx(row,'Remark')||'').trim(),note:rec.note||'',
+      opinion:String(gx(row,'Remark')||'').trim(),note:rec.note||'',revenue:rec.revenue||'',
       poomShare:rec.poomShare||0,auditorShare:rec.auditorShare||0,
     });
     if(isNew)added++;else updated++;
   }
+  mergeListsFromRecords();
   save();renderYearSel();renderDash();renderDataStat();
   toast(`📥 นำเข้าแล้ว: ใหม่ ${added} / อัพเดท ${updated} (ปี ${yr})`);
 }
@@ -680,11 +717,40 @@ function resetAll(){
   if(!confirm('ลบข้อมูลทั้งหมด '+records.length+' รายการ แล้วกลับไปใช้ข้อมูลตั้งต้น?'))return;
   if(!confirm('ยืนยันอีกครั้ง — ข้อมูลที่แก้ไข/เพิ่มเองจะหายทั้งหมด'))return;
   records=(window.SEED_DATA||[]).map(r=>({...r,docs:{...r.docs}}));
+  lists=null;normalizeData();
   save();renderYearSel();renderDash();renderDataStat();toast('🗑️ ล้างข้อมูลแล้ว');
 }
 function renderDataStat(){
   const ys=years();
   document.getElementById('dataStat').innerHTML='ทั้งหมด '+fmtN(records.length)+' รายการ — '+ys.map(y=>`ปี ${y}: ${fmtN(records.filter(r=>r.year===y).length)} งบ`).join(' | ');
+  renderLists();
+}
+
+/* ================= name lists manager ================= */
+const LIST_DEFS=[['auditors','👤 Auditor (ผู้ลงชื่อ)'],['contacts','🤝 Contact ลูกค้า'],['assistants','🧑‍💼 ชื่อผู้ช่วย']];
+function renderLists(){
+  normalizeData();
+  document.getElementById('listMgr').innerHTML=LIST_DEFS.map(([cat,title])=>`
+    <div class="card">
+      <div style="font-weight:800;font-size:13.5px;color:var(--navy);margin-bottom:8px">${title} (${lists[cat].length})</div>
+      <div class="chips" style="margin-bottom:10px">${lists[cat].map((n,i)=>
+        `<span class="chip">${esc(n)} <b style="cursor:pointer;padding-left:4px" onclick="delName('${cat}',${i})">✕</b></span>`).join('')||'<span style="color:var(--muted);font-size:13px">ยังไม่มีรายชื่อ</span>'}</div>
+      <div style="display:flex;gap:8px">
+        <input id="add_${cat}" placeholder="เพิ่มชื่อใหม่..." style="flex:1;padding:8px 11px;border:1.5px solid var(--line);border-radius:10px"
+          onkeydown="if(event.key==='Enter')addName('${cat}')">
+        <button onclick="addName('${cat}')" style="border:none;border-radius:10px;padding:8px 16px;font-weight:700;background:var(--teal);color:#fff">＋ เพิ่ม</button>
+      </div>
+    </div>`).join('');
+}
+function addName(cat){
+  const el=document.getElementById('add_'+cat);const v=el.value.trim();
+  if(!v)return;
+  if(lists[cat].includes(v)){toast('⚠️ มีชื่อนี้อยู่แล้ว');return;}
+  lists[cat].push(v);lists[cat].sort();save();renderLists();toast('＋ เพิ่ม "'+v+'" แล้ว');
+}
+function delName(cat,i){
+  const v=lists[cat][i];
+  lists[cat].splice(i,1);save();renderLists();toast('✕ เอา "'+v+'" ออกจากลิสต์แล้ว');
 }
 
 /* ================= unlock (deployed site) ================= */
