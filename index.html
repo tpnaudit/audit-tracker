@@ -312,16 +312,17 @@ label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bot
   <div class="ubox">
     <div style="font-size:38px;margin-bottom:8px">🔐</div>
     <h1>Audit Tracker</h1>
-    <p>ใส่รหัสปลดล็อคเพื่อโหลดข้อมูลงบสอบบัญชี<br>(ใส่ครั้งแรกครั้งเดียว เครื่องนี้จะจำไว้)</p>
+    <p id="unlockMsg">ใส่รหัสปลดล็อคเพื่อโหลดข้อมูลงบสอบบัญชี<br>(ใส่ครั้งแรกครั้งเดียว เครื่องนี้จะจำไว้)</p>
     <input id="pinInput" type="text" placeholder="ใส่รหัส PIN" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false">
     <div class="umsg" id="pinMsg"></div>
     <button class="btn btn-p" onclick="tryUnlock()">🔓 ปลดล็อค</button>
-    <button class="skip" onclick="skipUnlock()">เริ่มใช้แบบไม่มีข้อมูลตั้งต้น</button>
+    <button class="skip" id="unlockSkip" onclick="skipUnlock()">เริ่มใช้แบบไม่มีข้อมูลตั้งต้น</button>
   </div>
 </div>
 
 <script src="seed-data.js"></script>
 <script src="seed-data.enc.js"></script>
+<script src="sync-token.enc.js"></script>
 <script>
 /* ================= state ================= */
 const LS_KEY='auditTrackerData';
@@ -769,8 +770,8 @@ function delName(cat,i){
 
 /* ================= cloud sync (GitHub) ================= */
 const SYNC_KEY='auditTrackerSync';
-const GH_FILE='https://api.github.com/repos/tpnaudit/audit-tracker/contents/data.enc.json';
-const GH_BRANCH='data';
+const GH_FILE='https://api.github.com/repos/tpnaudit/audit-tracker-data/contents/data.enc.json';
+const GH_BRANCH='main';
 let syncCfg=null,syncing=false,syncTimer=null;
 try{syncCfg=JSON.parse(localStorage.getItem(SYNC_KEY)||'null');}catch(e){}
 function saveSync(){localStorage.setItem(SYNC_KEY,JSON.stringify(syncCfg));}
@@ -779,7 +780,7 @@ function u8b64(u8){let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromChar
 function b64u8(b){const s=atob(b);const u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u;}
 const keyCache={};
 async function deriveKey(pin,saltB64,iter){
-  const ck=saltB64+'|'+iter;
+  const ck=pin+'|'+saltB64+'|'+iter;
   if(!keyCache[ck]){
     const km=await crypto.subtle.importKey('raw',new TextEncoder().encode(pin),'PBKDF2',false,['deriveKey']);
     keyCache[ck]=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64u8(saltB64),iterations:iter,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
@@ -875,6 +876,13 @@ function renderSyncBox(){
         <button class="btn btn-p" style="width:auto;padding:9px 18px;font-size:13.5px" onclick="syncNow(true)">🔄 Sync ตอนนี้</button>
         <button class="btn btn-g" style="padding:9px 18px;font-size:13.5px" onclick="disconnectSync()">เลิกเชื่อมต่อเครื่องนี้</button>
       </div>`;
+  }else if(window.SYNC_TOKEN_ENC){
+    el.innerHTML=`
+      <div style="font-size:13px;line-height:1.6;margin-bottom:10px">เว็บนี้ฝังกุญแจ Sync ไว้แล้ว (เข้ารหัสด้วย PIN) — แค่ใส่ PIN ครั้งเดียว เครื่องนี้จะ sync กับทุกเครื่องอัตโนมัติ</div>
+      <div style="display:flex;gap:8px">
+        <input id="syncPinOnly" inputmode="numeric" placeholder="PIN" autocomplete="off" style="flex:1;padding:9px 10px;border:1.5px solid var(--line);border-radius:10px" onkeydown="if(event.key==='Enter')pinConnect()">
+        <button class="btn btn-p" style="width:auto;padding:9px 20px;font-size:13.5px" onclick="pinConnect()">🔗 เชื่อมต่อ</button>
+      </div>`;
   }else{
     el.innerHTML=`
       <div style="font-size:13px;line-height:1.65;margin-bottom:12px">
@@ -889,6 +897,14 @@ function renderSyncBox(){
       <button class="btn btn-p" onclick="connectSync()">🔗 เชื่อมต่อ</button>
       <div style="font-size:11.5px;color:var(--muted);margin-top:8px">Token กับ PIN ถูกเก็บไว้ในเครื่องนี้เท่านั้น ไม่ถูกอัพขึ้นเว็บ</div>`;
   }
+}
+async function pinConnect(){
+  const pin=document.getElementById('syncPinOnly').value.trim();
+  if(!pin){toast('⚠️ ใส่ PIN ก่อน');return;}
+  toast('⏳ กำลังเชื่อมต่อ...');
+  const ok=await autoConnectSync(pin);
+  if(ok){window._lastPin=pin;renderSyncBox();toast('☁️ เชื่อม Sync แล้ว');}
+  else toast('⚠️ PIN ไม่ถูกต้อง');
 }
 async function connectSync(){
   const token=document.getElementById('syncToken').value.trim();
@@ -912,26 +928,56 @@ document.addEventListener('visibilitychange',()=>{
 });
 
 /* ================= unlock (deployed site) ================= */
+let unlockMode='data'; // 'data' = ถอดรหัสข้อมูลตั้งต้น, 'sync' = ใส่ PIN เพื่อเปิด Sync
+const SYNC_SKIP_KEY='auditTrackerSyncSkip';
+function showUnlock(mode){
+  unlockMode=mode;
+  document.getElementById('unlockMsg').innerHTML=mode==='sync'
+    ?'ใส่รหัส PIN เพื่อเชื่อม Sync ข้ามเครื่อง<br>(ใส่ครั้งเดียว เครื่องนี้จะ sync อัตโนมัติตลอด)'
+    :'ใส่รหัสปลดล็อคเพื่อโหลดข้อมูลงบสอบบัญชี<br>(ใส่ครั้งแรกครั้งเดียว เครื่องนี้จะจำไว้)';
+  document.getElementById('unlockSkip').textContent=mode==='sync'?'ไว้ก่อน ใช้แบบไม่ sync':'เริ่มใช้แบบไม่มีข้อมูลตั้งต้น';
+  document.getElementById('unlock').style.display='flex';
+}
+async function autoConnectSync(pin){
+  if(syncCfg&&syncCfg.token)return true;
+  if(!window.SYNC_TOKEN_ENC||!pin)return false;
+  try{
+    const token=await decPayload(window.SYNC_TOKEN_ENC,pin);
+    syncCfg={token,pin,salt:null,lastSync:null};saveSync();
+    localStorage.removeItem(SYNC_SKIP_KEY);
+    setSyncUI('ok');syncNow(false);
+    return true;
+  }catch(e){return false;}
+}
 async function tryUnlock(){
   const pin=document.getElementById('pinInput').value.trim();
   const msg=document.getElementById('pinMsg');
   if(!pin){msg.textContent='กรุณาใส่รหัส';return;}
   if(!(window.crypto&&crypto.subtle)){msg.textContent='ต้องเปิดผ่าน https เท่านั้น';return;}
   msg.textContent='⏳ กำลังปลดล็อค...';msg.style.color='var(--muted)';
+  if(unlockMode==='sync'){
+    const ok=await autoConnectSync(pin);
+    if(ok){window._lastPin=pin;document.getElementById('unlock').style.display='none';toast('☁️ เชื่อม Sync แล้ว — กำลังดึงข้อมูลล่าสุด');}
+    else{msg.style.color='var(--red)';msg.textContent='รหัสไม่ถูกต้อง ลองใหม่อีกครั้ง';}
+    return;
+  }
   try{
-    const e=window.SEED_ENC;
-    const b=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
-    const km=await crypto.subtle.importKey('raw',new TextEncoder().encode(pin),'PBKDF2',false,['deriveKey']);
-    const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b(e.salt),iterations:e.iter,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
-    const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b(e.iv)},key,b(e.ct));
-    records=JSON.parse(new TextDecoder().decode(pt));
+    const data=await decPayload(window.SEED_ENC,pin);
+    records=data;
     window._lastPin=pin;
     save();
     document.getElementById('unlock').style.display='none';
     initApp();toast('🔓 โหลดข้อมูลแล้ว '+records.length+' รายการ');
+    autoConnectSync(pin); // มีกุญแจฝังอยู่ → เชื่อม sync ต่อเลยเงียบๆ
   }catch(err){msg.style.color='var(--red)';msg.textContent='รหัสไม่ถูกต้อง ลองใหม่อีกครั้ง';}
 }
 function skipUnlock(){
+  if(unlockMode==='sync'){
+    localStorage.setItem(SYNC_SKIP_KEY,'1');
+    document.getElementById('unlock').style.display='none';
+    toast('เปิด Sync ทีหลังได้ที่แท็บ ข้อมูล');
+    return;
+  }
   if(!confirm('เริ่มใช้แบบไม่มีข้อมูลตั้งต้น? (นำเข้าจาก Excel/JSON ทีหลังได้)'))return;
   records=[];save();document.getElementById('unlock').style.display='none';initApp();
 }
@@ -944,8 +990,12 @@ function initApp(){
   setSyncUI(syncCfg&&syncCfg.token?'ok':'');
   if(syncCfg&&syncCfg.token)syncNow(false);
 }
-if(needUnlock){document.getElementById('unlock').style.display='flex';}
-else initApp();
+if(needUnlock){showUnlock('data');}
+else{
+  initApp();
+  // มีกุญแจฝัง + ยังไม่เชื่อม sync + ไม่เคยกดข้าม → ชวนใส่ PIN เพื่อเปิด sync
+  if(!syncCfg&&window.SYNC_TOKEN_ENC&&!localStorage.getItem(SYNC_SKIP_KEY))showUnlock('sync');
+}
 </script>
 </body>
 </html>
