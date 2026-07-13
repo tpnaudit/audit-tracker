@@ -61,6 +61,11 @@ h2:first-child{margin-top:2px}
 .chip{background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:7px 13px;font-size:13px;font-weight:600;color:var(--ink)}
 .chip b{color:var(--red)}
 .chip:active{background:#eef4f9}
+.chip.on{border-color:var(--navy2);background:#e8f1f8;color:var(--navy2)}
+.docgrp{padding:8px 0;border-bottom:1px dashed var(--line)}
+.docgrp:last-child{border-bottom:none}
+.docgrp .gh{font-weight:800;font-size:13px;color:var(--navy)}
+.docgrp .gc{font-size:12.5px;color:var(--ink);line-height:1.7;margin-top:2px}
 .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:700}
 .b-green{background:#def7ec;color:#046c4e}.b-red{background:#fde8e8;color:#c81e1e}
 .b-amber{background:#fdf6b2;color:#8e4b10}.b-blue{background:#e1effe;color:#1e429f}
@@ -169,6 +174,7 @@ label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bot
 
   <h2>เอกสารค้าง (เฉพาะงบที่ลงชื่อแล้ว) — กดเพื่อดูรายชื่อ</h2>
   <div class="chips" id="docChips"></div>
+  <div id="docDetail"></div>
 
   <h2>สรุปตาม Contact ลูกค้า</h2>
   <div class="card tblwrap"><table id="tbContact"></table></div>
@@ -443,12 +449,13 @@ function renderDash(){
   mkChart('chMoney',{type:'doughnut',data:{labels:Object.keys(g).map(k=>`${k} (${g[k]})`),datasets:[{data:Object.values(g),backgroundColor:['#0e9f6e','#e02424','#1a56db','#9ca3af']}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{family:'Noto Sans Thai'}}}}}});
 
-  /* doc chips (among signed) */
+  /* doc chips (among signed) — กดเพื่อกางรายละเอียดราย Contact */
   const dc=document.getElementById('docChips');
   dc.innerHTML=Object.entries(DOCS).map(([k,lb])=>{
     const n=signed.filter(r=>!(r.docs&&r.docs[k])).length;
-    return `<button class="chip" onclick="gotoDoc('${k}')">${lb} ค้าง <b>${fmtN(n)}</b></button>`;
+    return `<button class="chip ${dashDocSel===k?'on':''}" onclick="toggleDoc('${k}')">${lb} ค้าง <b>${fmtN(n)}</b></button>`;
   }).join('');
+  renderDocDetail(signed);
 
   /* contact table */
   const byC={};rs.forEach(r=>{const c=r.contact||'(ไม่ระบุ)';(byC[c]=byC[c]||[]).push(r);});
@@ -463,6 +470,23 @@ function renderDash(){
   const row=(lb,a)=>`<tr><td>${lb}</td><td class="r">${a.length}</td><td class="r">${fmtN(Math.round(a.reduce((s,r)=>s+(r.fee||0),0)))}</td><td class="r">${fmtN(Math.round(a.reduce((s,r)=>s+(r.wht||0),0)))}</td></tr>`;
   document.getElementById('tbTax').innerHTML=
     `<tr><th></th><th class="r">จำนวนงบ</th><th class="r">ราคา (฿)</th><th class="r">หัก ณ ที่จ่าย (฿)</th></tr>`+row('เข้าระบบ (Yes)',inS)+row('ไม่เข้าระบบ (No)',outS)+row('รวม',rs);
+}
+let dashDocSel=null;
+function toggleDoc(k){dashDocSel=dashDocSel===k?null:k;renderDash();}
+function renderDocDetail(signed){
+  const el=document.getElementById('docDetail');
+  if(!dashDocSel){el.innerHTML='';return;}
+  const missing=signed.filter(r=>!(r.docs&&r.docs[dashDocSel]));
+  const byC={};missing.forEach(r=>{const c=r.contact||'(ไม่ระบุ)';(byC[c]=byC[c]||[]).push(r);});
+  const keys=Object.keys(byC).sort((a,b)=>byC[b].length-byC[a].length);
+  el.innerHTML=`<div class="card" style="margin-top:10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px">
+      <div style="font-weight:800;font-size:13.5px;color:var(--navy)">${DOCS[dashDocSel]} — ค้าง ${fmtN(missing.length)} งบ</div>
+      <button onclick="gotoDoc('${dashDocSel}')" style="border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;background:#e1effe;color:#1e429f;white-space:nowrap">เปิดในรายการงบ →</button>
+    </div>
+    ${keys.map(c=>`<div class="docgrp"><div class="gh">${esc(c)} — ${byC[c].length} งบ</div>
+      <div class="gc">${byC[c].map(r=>esc(r.company)).join(' · ')}</div></div>`).join('')||'<div style="color:var(--muted);font-size:13px">ไม่มีรายการค้าง 🎉</div>'}
+  </div>`;
 }
 function gotoDoc(k){
   document.getElementById('fDoc').value=k;
@@ -479,38 +503,58 @@ let listLimit=50;
 ['fSearch','fStatus','fAuditor','fContact','fMonth','fDoc'].forEach(id=>{
   document.getElementById(id).addEventListener('input',()=>{listLimit=50;renderList();});
 });
+function filterVals(){
+  return {
+    q:document.getElementById('fSearch').value.trim().toLowerCase(),
+    st:document.getElementById('fStatus').value,
+    au:document.getElementById('fAuditor').value,
+    co:document.getElementById('fContact').value,
+    mo:document.getElementById('fMonth').value,
+    dk:document.getElementById('fDoc').value,
+  };
+}
+function passF(r,p,except){
+  if(except!=='q'&&p.q&&!(r.company.toLowerCase().includes(p.q)||(r.taxId||'').includes(p.q)))return false;
+  if(except!=='st'){
+    if(p.st==='unsigned'&&isSigned(r))return false;
+    if(p.st==='signed'&&!isSigned(r))return false;
+    if(p.st==='unpaid'&&r.paid)return false;
+    if(p.st==='paid'&&!r.paid)return false;
+    if(p.st==='signed_unpaid'&&!(isSigned(r)&&!r.paid))return false;
+  }
+  if(except!=='au'&&p.au&&(r.auditor||'Poom')!==p.au)return false;
+  if(except!=='co'&&p.co&&r.contact!==p.co)return false;
+  if(except!=='mo'&&p.mo&&String(r.month)!==p.mo)return false;
+  if(except!=='dk'&&p.dk&&r.docs&&r.docs[p.dk])return false;
+  return true;
+}
+/* ตัวเลือกแต่ละช่องเหลือเฉพาะที่เข้ากับ filter อื่นที่เลือกอยู่ พร้อมจำนวนกำกับ */
 function fillFilterOpts(){
-  const rs=yearRecs();
-  const opt=(vals,sel,first)=>{const el=document.getElementById(sel);const cur=el.value;
-    el.innerHTML=`<option value="">${first}</option>`+vals.map(v=>`<option>${esc(v)}</option>`).join('');
-    if([...el.options].some(o=>o.value===cur))el.value=cur;};
-  opt([...new Set(rs.map(r=>r.auditor||'Poom'))].sort(),'fAuditor','Auditor: ทั้งหมด');
-  opt([...new Set(rs.map(r=>r.contact).filter(Boolean))].sort(),'fContact','Contact: ทั้งหมด');
-  const ms=[...new Set(rs.map(r=>r.month).filter(m=>m))].sort((a,b)=>a-b);
-  const el=document.getElementById('fMonth');const cur=el.value;
-  el.innerHTML='<option value="">เดือน(รอบ): ทั้งหมด</option>'+ms.map(m=>`<option value="${m}">รอบเดือน ${m}</option>`).join('');
-  if([...el.options].some(o=>o.value===cur))el.value=cur;
+  const p=filterVals();
+  const facet=(selId,key,getVal,label,fmt)=>{
+    const el=document.getElementById(selId);const cur=el.value;
+    const sub=yearRecs().filter(r=>passF(r,p,key));
+    const cnt={};sub.forEach(r=>{const v=getVal(r);if(v!==''&&v!=null)cnt[v]=(cnt[v]||0)+1;});
+    let keys=Object.keys(cnt).sort(typeof fmt==='function'?(a,b)=>+a-+b:undefined);
+    if(cur&&!keys.includes(cur))keys.push(cur); // คงค่าที่เลือกไว้แม้เหลือ 0 เพื่อกดยกเลิกได้
+    el.innerHTML=`<option value="">${label}</option>`+keys.map(v=>
+      `<option value="${esc(v)}">${fmt?fmt(v):esc(v)} (${cnt[v]||0})</option>`).join('');
+    el.value=keys.includes(cur)?cur:'';
+  };
+  facet('fAuditor','au',r=>r.auditor||'Poom','Auditor: ทั้งหมด');
+  facet('fContact','co',r=>r.contact,'Contact: ทั้งหมด');
+  facet('fMonth','mo',r=>r.month?String(r.month):'','เดือน(รอบ): ทั้งหมด',v=>'รอบเดือน '+v);
+  /* doc filter: นับจำนวนที่ "ขาด" แต่ละอย่าง */
+  const dEl=document.getElementById('fDoc');const dCur=dEl.value;
+  const dSub=yearRecs().filter(r=>passF(r,p,'dk'));
+  const dLb={hard:'ยังไม่ส่ง Hard',elRep:'ขาด EL & Rep',confirm:'ขาด Confirm',whtCert:'ขาดใบหัก ณ ที่จ่าย',shLetter:'ขาดยืนยัน ผถห.'};
+  dEl.innerHTML='<option value="">เอกสารขาด: -</option>'+Object.entries(dLb).map(([k,lb])=>
+    `<option value="${k}">${lb} (${dSub.filter(r=>!(r.docs&&r.docs[k])).length})</option>`).join('');
+  if([...dEl.options].some(o=>o.value===dCur))dEl.value=dCur;
 }
 function filtered(){
-  const q=document.getElementById('fSearch').value.trim().toLowerCase();
-  const st=document.getElementById('fStatus').value;
-  const au=document.getElementById('fAuditor').value;
-  const co=document.getElementById('fContact').value;
-  const mo=document.getElementById('fMonth').value;
-  const dk=document.getElementById('fDoc').value;
-  return yearRecs().filter(r=>{
-    if(q&&!(r.company.toLowerCase().includes(q)||(r.taxId||'').includes(q)))return false;
-    if(st==='unsigned'&&isSigned(r))return false;
-    if(st==='signed'&&!isSigned(r))return false;
-    if(st==='unpaid'&&r.paid)return false;
-    if(st==='paid'&&!r.paid)return false;
-    if(st==='signed_unpaid'&&!(isSigned(r)&&!r.paid))return false;
-    if(au&&(r.auditor||'Poom')!==au)return false;
-    if(co&&r.contact!==co)return false;
-    if(mo&&String(r.month)!==mo)return false;
-    if(dk&&r.docs&&r.docs[dk])return false;
-    return true;
-  }).sort((a,b)=>(b.dateNotified||'').localeCompare(a.dateNotified||''));
+  const p=filterVals();
+  return yearRecs().filter(r=>passF(r,p,null)).sort((a,b)=>(b.dateNotified||'').localeCompare(a.dateNotified||''));
 }
 function renderList(){
   fillFilterOpts();
@@ -706,9 +750,10 @@ function importWB(wb,fname){
   const hdr=aoa[hi].map(h=>String(h||'').replace(/\s+/g,''));
   const ix=name=>hdr.findIndex(h=>h===name.replace(/\s+/g,''));
   const gx=(row,...names)=>{for(const n of names){const i=ix(n);if(i>=0&&row[i]!=null&&row[i]!=='')return row[i];}return '';};
-  const dt=v=>{if(!v)return'';if(v instanceof Date)return(v.getFullYear())+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0');
-    const m=String(v).match(/(\d{4})-(\d{2})-(\d{2})/);if(m)return m[0];
-    const m2=String(v).match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);if(m2){let y=+m2[3];if(y<100)y+=2500;return y+'-'+m2[2].padStart(2,'0')+'-'+m2[1].padStart(2,'0');}return'';};
+  const beY=y=>(y>=1990&&y<2490)?y+543:y; // ปี ค.ศ. → พ.ศ.
+  const dt=v=>{if(!v)return'';if(v instanceof Date)return beY(v.getFullYear())+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0');
+    const m=String(v).match(/(\d{4})-(\d{2})-(\d{2})/);if(m)return beY(+m[1])+'-'+m[2]+'-'+m[3];
+    const m2=String(v).match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);if(m2){let y=+m2[3];if(y<100)y+=2500;return beY(y)+'-'+m2[2].padStart(2,'0')+'-'+m2[1].padStart(2,'0');}return'';};
   const num=v=>{const n=parseFloat(String(v).replace(/,/g,''));return isNaN(n)?0:n;};
   const yes=v=>/^(yes|y|ใช่)$/i.test(String(v||'').trim());
   let added=0,updated=0;
