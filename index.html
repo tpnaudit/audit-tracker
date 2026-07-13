@@ -315,13 +315,13 @@ th.st .ar{font-size:9px;opacity:.9}
       <div><label>วันที่รับเงิน</label><input id="f_datePaid" type="date"></div>
     </div>
 
-    <div class="fsec">📄 ติดตามเอกสาร</div>
+    <div class="fsec">📄 ติดตามเอกสาร <span style="font-weight:400;color:var(--muted)">(ค้าง / ได้แล้ว / ไม่ต้องใช้)</span></div>
     <div class="ckrow">
-      <label class="ck"><input type="checkbox" id="f_doc_hard"><span>ส่ง Hard copy แล้ว</span></label>
-      <label class="ck"><input type="checkbox" id="f_doc_elRep"><span>ได้รับ EL & Rep Letter</span></label>
-      <label class="ck"><input type="checkbox" id="f_doc_confirm"><span>ได้รับ Confirm signed</span></label>
-      <label class="ck"><input type="checkbox" id="f_doc_whtCert"><span>ได้รับใบหัก ณ ที่จ่าย</span></label>
-      <label class="ck"><input type="checkbox" id="f_doc_shLetter"><span>ได้รับยืนยัน ผถห.ไทย</span></label>
+      <div><label>ส่ง Hard copy</label><select id="f_doc_hard"><option value="no">❌ ค้าง</option><option value="yes">✅ ได้แล้ว</option><option value="na">— ไม่ต้องใช้</option></select></div>
+      <div><label>EL & Rep Letter</label><select id="f_doc_elRep"><option value="no">❌ ค้าง</option><option value="yes">✅ ได้แล้ว</option><option value="na">— ไม่ต้องใช้</option></select></div>
+      <div><label>Confirm signed</label><select id="f_doc_confirm"><option value="no">❌ ค้าง</option><option value="yes">✅ ได้แล้ว</option><option value="na">— ไม่ต้องใช้</option></select></div>
+      <div><label>ใบหัก ณ ที่จ่าย</label><select id="f_doc_whtCert"><option value="no">❌ ค้าง</option><option value="yes">✅ ได้แล้ว</option><option value="na">— ไม่ต้องใช้</option></select></div>
+      <div><label>ยืนยัน ผถห.ไทย</label><select id="f_doc_shLetter"><option value="no">❌ ค้าง</option><option value="yes">✅ ได้แล้ว</option><option value="na">— ไม่ต้องใช้</option></select></div>
     </div>
 
     <div class="frow one" style="margin-top:12px"><div><label>หมายเหตุ</label><textarea id="f_note" rows="2"></textarea></div></div>
@@ -419,6 +419,9 @@ const net=r=>(r.fee||0)+(r.incentive||0)-(r.wht||0);
 /* สุทธิของเรา = ส่วนของ Poom (กรณีส่งต่อ) หรือรับสุทธิ แล้วหักค่าจ้างผู้ช่วย */
 const poomNet=r=>((r.poomShare||r.auditorShare)?(r.poomShare||0):net(r))-(r.assistantFee||0);
 const isSigned=r=>!!(r.dateSigned||r.signedFlag);
+/* เอกสาร 3 สถานะ: 'yes'=ได้แล้ว, 'no'=ค้าง, 'na'=ไม่ต้องใช้ (ช่องว่างใน Excel) */
+const docVal=(r,k)=>{const v=r.docs?r.docs[k]:undefined;return v===null?'na':(v?'yes':'no');};
+const docMissing=(r,k)=>docVal(r,k)==='no';
 const isPoom=r=>(r.auditor||'').trim().toLowerCase().replace(/^p'|^พี่|^คุณ/,'')==='poom'||!r.auditor;
 let curYear=null;
 
@@ -521,7 +524,7 @@ function renderDash(){
   /* doc chips (among signed) — กดเพื่อกางรายละเอียดราย Contact */
   const dc=document.getElementById('docChips');
   dc.innerHTML=Object.entries(DOCS).map(([k,lb])=>{
-    const n=signed.filter(r=>!(r.docs&&r.docs[k])).length;
+    const n=signed.filter(r=>docMissing(r,k)).length;
     return `<button class="chip ${dashDocSel===k?'on':''}" onclick="toggleDoc('${k}')">${lb} ค้าง <b>${fmtN(n)}</b></button>`;
   }).join('');
   renderDocDetail(signed);
@@ -613,7 +616,7 @@ function renderContactCard(){
   const signed=rs.filter(isSigned);
   const due=signed.filter(r=>!r.paid).sort((a,b)=>clientDue(b)-clientDue(a));
   const dueTot=due.reduce((s,r)=>s+clientDue(r),0);
-  const docMiss=Object.entries(DOCS).map(([k,lb])=>({k,lb,list:signed.filter(r=>!(r.docs&&r.docs[k]))})).filter(d=>d.list.length);
+  const docMiss=Object.entries(DOCS).map(([k,lb])=>({k,lb,list:signed.filter(r=>docMissing(r,k))})).filter(d=>d.list.length);
   el.innerHTML=`<div class="ccard">
     <div class="cchead">
       <div><div class="ccname">${esc(c)}</div>
@@ -643,7 +646,7 @@ function toggleDoc(k){dashDocSel=dashDocSel===k?null:k;renderDash();}
 function renderDocDetail(signed){
   const el=document.getElementById('docDetail');
   if(!dashDocSel){el.innerHTML='';return;}
-  const missing=signed.filter(r=>!(r.docs&&r.docs[dashDocSel]));
+  const missing=signed.filter(r=>docMissing(r,dashDocSel));
   const byC={};missing.forEach(r=>{const c=r.contact||'(ไม่ระบุ)';(byC[c]=byC[c]||[]).push(r);});
   const keys=Object.keys(byC).sort((a,b)=>byC[b].length-byC[a].length);
   el.innerHTML=`<div class="card" style="margin-top:10px">
@@ -692,7 +695,7 @@ function passF(r,p,except){
   if(except!=='au'&&p.au&&(r.auditor||'Poom')!==p.au)return false;
   if(except!=='co'&&p.co&&r.contact!==p.co)return false;
   if(except!=='mo'&&p.mo&&String(r.month)!==p.mo)return false;
-  if(except!=='dk'&&p.dk&&r.docs&&r.docs[p.dk])return false;
+  if(except!=='dk'&&p.dk&&!docMissing(r,p.dk))return false;
   return true;
 }
 /* ตัวเลือกแต่ละช่องเหลือเฉพาะที่เข้ากับ filter อื่นที่เลือกอยู่ พร้อมจำนวนกำกับ */
@@ -716,7 +719,7 @@ function fillFilterOpts(){
   const dSub=yearRecs().filter(r=>passF(r,p,'dk'));
   const dLb={hard:'ยังไม่ส่ง Hard',elRep:'ขาด EL & Rep',confirm:'ขาด Confirm',whtCert:'ขาดใบหัก ณ ที่จ่าย',shLetter:'ขาดยืนยัน ผถห.'};
   dEl.innerHTML='<option value="">เอกสารขาด: -</option>'+Object.entries(dLb).map(([k,lb])=>
-    `<option value="${k}">${lb} (${dSub.filter(r=>!(r.docs&&r.docs[k])).length})</option>`).join('');
+    `<option value="${k}">${lb} (${dSub.filter(r=>docMissing(r,k)).length})</option>`).join('');
   if([...dEl.options].some(o=>o.value===dCur))dEl.value=dCur;
 }
 function filtered(){
@@ -730,7 +733,11 @@ function renderList(){
   document.getElementById('listSum').textContent=`พบ ${fmtN(rs.length)} งบ | ค่าสอบรวม ${fmtB(sumFee)}`;
   const shown=rs.slice(0,listLimit);
   document.getElementById('listBox').innerHTML=shown.map(r=>{
-    const docs=Object.entries(DOCS).map(([k,lb])=>`<span class="${r.docs&&r.docs[k]?'ok':'no'}">${r.docs&&r.docs[k]?'✓':'✗'}${lb}</span>`).join(' ');
+    const docs=Object.entries(DOCS).map(([k,lb])=>{
+      const v=docVal(r,k);
+      if(v==='na')return '';
+      return `<span class="${v==='yes'?'ok':'no'}">${v==='yes'?'✓':'✗'}${lb}</span>`;
+    }).filter(Boolean).join(' ')||'<span style="color:var(--muted)">— ไม่มีเอกสารต้องติดตาม</span>';
     return `<div class="item">
       <div class="top"><div><div class="nm">${esc(r.company)}</div>${r.taxId?`<div class="tid">${esc(r.taxId)}</div>`:''}</div>
       <div class="fee">${fmtB(r.fee||0)}</div></div>
@@ -786,7 +793,7 @@ function resetForm(){
   F('f_month').value='';F('f_opinion').value='';F('f_revenue').value='';
   ['f_fee','f_incentive','f_wht','f_assistantFee','f_poomShare','f_auditorShare'].forEach(id=>F(id).value=0);
   F('f_inSystem').checked=false;F('f_paid').checked=false;F('f_signedFlag').checked=false;
-  Object.keys(DOCS).forEach(k=>F('f_doc_'+k).checked=false);
+  Object.keys(DOCS).forEach(k=>F('f_doc_'+k).value='no');
   F('f_dateNotified').value=todayBE();whtTouched=false;F('splitRow').style.display='none';
   fillDatalists();updNet();
 }
@@ -802,7 +809,7 @@ function editRec(id){
   F('f_assistantFee').value=r.assistantFee||0;F('f_assistantName').value=r.assistantName||'';
   F('f_poomShare').value=r.poomShare||0;F('f_auditorShare').value=r.auditorShare||0;
   F('f_paid').checked=!!r.paid;F('f_datePaid').value=r.datePaid||'';
-  Object.keys(DOCS).forEach(k=>F('f_doc_'+k).checked=!!(r.docs&&r.docs[k]));
+  Object.keys(DOCS).forEach(k=>F('f_doc_'+k).value=docVal(r,k));
   F('f_note').value=r.note||'';whtTouched=true;
   F('splitRow').style.display=(r.auditor&&r.auditor.toLowerCase()!=='poom')?'grid':'none';
   updNet();showPage('pg-form');
@@ -821,7 +828,7 @@ function saveForm(){
     assistantFee:+F('f_assistantFee').value||0,assistantName:F('f_assistantName').value.trim(),
     poomShare:+F('f_poomShare').value||0,auditorShare:+F('f_auditorShare').value||0,
     paid:F('f_paid').checked,datePaid:F('f_datePaid').value,
-    docs:Object.fromEntries(Object.keys(DOCS).map(k=>[k,F('f_doc_'+k).checked])),
+    docs:Object.fromEntries(Object.keys(DOCS).map(k=>{const v=F('f_doc_'+k).value;return [k,v==='yes'?true:v==='na'?null:false];})),
     note:F('f_note').value.trim(),
     updatedAt:Date.now(),
   });
@@ -855,9 +862,10 @@ function exportExcel(){
   const hdr=['No.','วันที่แจ้ง','วันที่ลงรายชื่อ','Remark','Month','เลขนิติบุคคล','กิจการ','Auditor','Contact ลูกค้า','งบปี',
     'เข้าระบบ','รายได้ของงบ','ราคา','Incentive','หัก ณ ที่จ่าย','จ้างผู้ช่วย','ชื่อผู้ช่วย','รับสุทธิ','รับเงินแล้ว','วันที่รับเงิน',
     'ค้างรับ','Poom รับ','ผู้สอบอื่นรับ','ส่ง Hard','ได้รับ EL and Rep Letter','ได้รับ confirm signed','ได้รับใบหัก ณ ที่จ่าย','ได้รับหนังสือยืนยันผถหไทย','หมายเหตุ'];
+  const dv=(r,k)=>({yes:'Yes',no:'No',na:''})[docVal(r,k)];
   const rows=rs.map((r,i)=>[i+1,r.dateNotified,r.dateSigned||(r.signedFlag?'Y':''),r.opinion,r.month||'',r.taxId,r.company,r.auditor,r.contact,r.fyEnd,
     yn(r.inSystem),r.revenue||'',r.fee||0,r.incentive||0,r.wht||0,r.assistantFee||0,r.assistantName,0,yn(r.paid),r.datePaid,
-    0,r.poomShare||'',r.auditorShare||'',yn(r.docs&&r.docs.hard),yn(r.docs&&r.docs.elRep),yn(r.docs&&r.docs.confirm),yn(r.docs&&r.docs.whtCert),yn(r.docs&&r.docs.shLetter),r.note]);
+    0,r.poomShare||'',r.auditorShare||'',dv(r,'hard'),dv(r,'elRep'),dv(r,'confirm'),dv(r,'whtCert'),dv(r,'shLetter'),r.note]);
   const totalRow=Array(hdr.length).fill('');totalRow[6]='รวม '+rs.length+' งบ';
   const ws=XLSX.utils.aoa_to_sheet([hdr,...rows,totalRow]);
   const lastRow=rows.length+1;                       // แถวข้อมูลสุดท้าย (sheet 1-based)
@@ -943,9 +951,10 @@ function importWB(wb,fname){
       wht:num(gx(row,'หักณที่จ่าย','หัก ณ ที่จ่าย')),assistantFee:num(gx(row,'จ้างผู้ช่วย')),
       assistantName:String(gx(row,'ชื่อผู้ช่วย')||'').trim(),
       paid:!!dp||(unpaidV!==''&&num(unpaidV)===0&&fee>0),datePaid:dp,
-      docs:{hard:yes(gx(row,'ส่งHard','ส่ง Hard')),elRep:yes(gx(row,'ได้รับELandRepLetterยัง')),
-        confirm:yes(gx(row,'ได้รับconfirmsignedยัง(น้องปูน)','ได้รับconfirmsignedยัง')),
-        whtCert:yes(gx(row,'ได้รับใบหักณที่จ่าย')),shLetter:yes(gx(row,'ได้รับหนังสือยืนยันผถหไทย(น้องปูน)','ได้รับหนังสือยืนยันผถหไทย'))},
+      docs:(()=>{const tri=v=>{const s=String(v||'').trim();if(!s)return null;return /^(yes|y|ใช่)$/i.test(s)?true:false;};
+        return {hard:tri(gx(row,'ส่งHard','ส่ง Hard')),elRep:tri(gx(row,'ได้รับELandRepLetterยัง','ได้รับELandRepLetter')),
+        confirm:tri(gx(row,'ได้รับconfirmsignedยัง(น้องปูน)','ได้รับconfirmsignedยัง')),
+        whtCert:tri(gx(row,'ได้รับใบหักณที่จ่าย')),shLetter:tri(gx(row,'ได้รับหนังสือยืนยันผถหไทย(น้องปูน)','ได้รับหนังสือยืนยันผถหไทย'))};})(),
       opinion:String(gx(row,'Remark')||'').trim(),note:rec.note||'',revenue:rec.revenue||'',
       poomShare:rec.poomShare||0,auditorShare:rec.auditorShare||0,
       deleted:false,updatedAt:Date.now(),
