@@ -45,7 +45,7 @@ h2:first-child{margin-top:2px}
 
 /* ===== cards / KPI ===== */
 .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-@media(min-width:760px){.kpis{grid-template-columns:repeat(6,1fr)}}
+@media(min-width:760px){.kpis{grid-template-columns:repeat(4,1fr)}}
 .kpi{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 14px}
 .kpi .lb{font-size:12px;color:var(--muted);font-weight:600}
 .kpi .v{font-size:21px;font-weight:800;margin-top:2px;line-height:1.15}
@@ -165,6 +165,9 @@ label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bot
   <h2>งานรายเดือน (ตามวันที่ลงชื่อ)</h2>
   <div class="card"><div class="chartbox"><canvas id="chMonth"></canvas></div></div>
 
+  <h2>ยอดรับเงินตามเดือน (ตามวันที่รับเงิน)</h2>
+  <div class="card"><div class="chartbox"><canvas id="chPaidMonth"></canvas></div></div>
+
   <div class="grid2">
     <div><h2>แยกตามผู้สอบ (Auditor)</h2>
       <div class="card"><div class="chartbox"><canvas id="chAuditor"></canvas></div></div></div>
@@ -178,6 +181,14 @@ label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bot
 
   <h2>สรุปตาม Contact ลูกค้า</h2>
   <div class="card tblwrap"><table id="tbContact"></table></div>
+
+  <h2>ยอดตามลูกค้า (กิจการ)</h2>
+  <div class="card">
+    <input type="search" id="custSearch" placeholder="🔍 ค้นหากิจการ..." oninput="custLimit=15;renderCust()"
+      style="width:100%;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;margin-bottom:10px">
+    <div class="tblwrap"><table id="tbCust"></table></div>
+    <button id="custMore" onclick="custLimit+=30;renderCust()" style="display:none;width:100%;margin-top:10px;padding:9px;border:none;border-radius:10px;background:#e3eaf0;font-weight:700;color:var(--navy)">แสดงเพิ่มเติม</button>
+  </div>
 
   <h2>ภาษี — งบที่เข้าระบบ</h2>
   <div class="card tblwrap"><table id="tbTax"></table></div>
@@ -370,6 +381,8 @@ const fmtN=n=>n.toLocaleString('th-TH');
 function fmtD(s){if(!s)return'-';const[y,m,d]=s.split('-').map(Number);return d+' '+THM[m-1]+' '+String(y).slice(-2);}
 function todayBE(){const d=new Date();return (d.getFullYear()+543)+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 const net=r=>(r.fee||0)+(r.incentive||0)-(r.wht||0);
+/* สุทธิของเรา = ส่วนของ Poom (กรณีส่งต่อ) หรือรับสุทธิ แล้วหักค่าจ้างผู้ช่วย */
+const poomNet=r=>((r.poomShare||r.auditorShare)?(r.poomShare||0):net(r))-(r.assistantFee||0);
 const isSigned=r=>!!(r.dateSigned||r.signedFlag);
 const isPoom=r=>(r.auditor||'').trim().toLowerCase().replace(/^p'|^พี่|^คุณ/,'')==='poom'||!r.auditor;
 let curYear=null;
@@ -413,13 +426,17 @@ function renderDash(){
   const unpaidAmt=rs.filter(r=>!r.paid).reduce((s,r)=>s+net(r),0);
   const totFee=rs.reduce((s,r)=>s+(r.fee||0),0);
   const pct=rs.length?Math.round(signed.length/rs.length*100):0;
+  const assistTot=rs.reduce((s,r)=>s+(r.assistantFee||0)+(r.auditorShare||0),0);
+  const poomTot=rs.reduce((s,r)=>s+poomNet(r),0);
   document.getElementById('kpis').innerHTML=`
     <div class="kpi"><div class="lb">งบทั้งหมด</div><div class="v">${fmtN(rs.length)}</div><div class="sub">ปี ${curYear}</div></div>
     <div class="kpi gd"><div class="lb">ลงชื่อแล้ว</div><div class="v">${fmtN(signed.length)}</div><div class="sub">${pct}% ของทั้งหมด</div></div>
     <div class="kpi am"><div class="lb">รอลงชื่อ</div><div class="v">${fmtN(rs.length-signed.length)}</div><div class="sub">คงเหลือ</div></div>
     <div class="kpi bl"><div class="lb">ค่าสอบรวม</div><div class="v">${fmtB(totFee)}</div><div class="sub">ก่อนหักภาษี</div></div>
     <div class="kpi gd"><div class="lb">รับเงินแล้ว</div><div class="v">${fmtB(paidAmt)}</div><div class="sub">${fmtN(rs.filter(r=>r.paid).length)} งบ</div></div>
-    <div class="kpi rd"><div class="lb">ค้างรับเงิน</div><div class="v">${fmtB(unpaidAmt)}</div><div class="sub">${fmtN(rs.filter(r=>!r.paid).length)} งบ</div></div>`;
+    <div class="kpi rd"><div class="lb">ค้างรับเงิน</div><div class="v">${fmtB(unpaidAmt)}</div><div class="sub">${fmtN(rs.filter(r=>!r.paid).length)} งบ</div></div>
+    <div class="kpi am"><div class="lb">จ่ายผู้ช่วย+ส่วนแบ่ง</div><div class="v">${fmtB(assistTot)}</div><div class="sub">ค่าผู้ช่วย + ผู้สอบอื่น</div></div>
+    <div class="kpi bl"><div class="lb">สุทธิของเรา</div><div class="v">${fmtB(poomTot)}</div><div class="sub">หลังหักผู้ช่วย/ส่วนแบ่ง</div></div>`;
 
   /* month chart */
   const sM=Array(12).fill(0),nM=Array(12).fill(0);
@@ -431,6 +448,20 @@ function renderDash(){
     {label:'ลงชื่อแล้ว',data:sM,backgroundColor:'#0e9f8a',borderRadius:5},
     {label:'งานเข้า (แจ้ง)',data:nM,backgroundColor:'#c3d5e2',borderRadius:5}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{family:'Noto Sans Thai'}}}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
+
+  /* paid-by-month chart */
+  const pm=Array(13).fill(0),pn=Array(13).fill(0);
+  rs.filter(r=>r.paid).forEach(r=>{
+    let idx=12;
+    if(r.datePaid){const m=+r.datePaid.split('-')[1];if(m>=1&&m<=12)idx=m-1;}
+    pm[idx]+=net(r);pn[idx]+=poomNet(r);
+  });
+  mkChart('chPaidMonth',{type:'bar',data:{labels:[...THM,'ไม่ระบุวัน'],datasets:[
+    {label:'รับสุทธิ',data:pm.map(v=>Math.round(v)),backgroundColor:'#155a85',borderRadius:5},
+    {label:'สุทธิของเรา (หักผู้ช่วย/ส่วนแบ่ง)',data:pn.map(v=>Math.round(v)),backgroundColor:'#0e9f8a',borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{family:'Noto Sans Thai'}}},
+      tooltip:{callbacks:{label:c=>c.dataset.label+': ฿'+c.parsed.y.toLocaleString('th-TH')}}},
+      scales:{y:{beginAtZero:true,ticks:{callback:v=>(v/1000)+'k'}}}}});
 
   /* auditor chart */
   const byA={};rs.forEach(r=>{const a=r.auditor||'Poom';byA[a]=(byA[a]||0)+1;});
@@ -470,6 +501,24 @@ function renderDash(){
   const row=(lb,a)=>`<tr><td>${lb}</td><td class="r">${a.length}</td><td class="r">${fmtN(Math.round(a.reduce((s,r)=>s+(r.fee||0),0)))}</td><td class="r">${fmtN(Math.round(a.reduce((s,r)=>s+(r.wht||0),0)))}</td></tr>`;
   document.getElementById('tbTax').innerHTML=
     `<tr><th></th><th class="r">จำนวนงบ</th><th class="r">ราคา (฿)</th><th class="r">หัก ณ ที่จ่าย (฿)</th></tr>`+row('เข้าระบบ (Yes)',inS)+row('ไม่เข้าระบบ (No)',outS)+row('รวม',rs);
+
+  _dashRs=rs;renderCust();
+}
+
+/* ===== ยอดตามลูกค้า ===== */
+let _dashRs=[],custLimit=15;
+function renderCust(){
+  const q=document.getElementById('custSearch').value.trim().toLowerCase();
+  let list=_dashRs.filter(r=>!q||r.company.toLowerCase().includes(q)||(r.taxId||'').includes(q));
+  list=[...list].sort((a,b)=>(b.fee||0)-(a.fee||0));
+  const shown=list.slice(0,custLimit);
+  document.getElementById('tbCust').innerHTML=
+    `<tr><th>กิจการ</th><th>Contact</th><th class="r">ราคา (฿)</th><th class="r">สุทธิของเรา (฿)</th><th class="r">ค้างรับ (฿)</th></tr>`+
+    (shown.map(r=>`<tr><td>${esc(r.company)}</td><td>${esc(r.contact||'-')}</td><td class="r">${fmtN(Math.round(r.fee||0))}</td><td class="r">${fmtN(Math.round(poomNet(r)))}</td><td class="r" style="color:${r.paid?'var(--green)':'var(--red)'}">${r.paid?'0':fmtN(Math.round(net(r)))}</td></tr>`).join('')
+     ||'<tr><td colspan="5" style="color:var(--muted)">ไม่พบกิจการ</td></tr>');
+  const more=document.getElementById('custMore');
+  more.style.display=list.length>custLimit?'block':'none';
+  more.textContent=`แสดงเพิ่มเติม (เหลืออีก ${fmtN(Math.max(list.length-custLimit,0))} ราย)`;
 }
 let dashDocSel=null;
 function toggleDoc(k){dashDocSel=dashDocSel===k?null:k;renderDash();}
@@ -577,7 +626,7 @@ function renderList(){
         ${r.revenue?`<span class="badge b-gray">📈 ${esc(r.revenue)}</span>`:''}
         ${r.inSystem?'<span class="badge b-blue">เข้าระบบ</span>':''}
       </div>
-      <div class="dts">แจ้ง ${fmtD(r.dateNotified)} · งบปี ${fmtD(r.fyEnd)}${r.datePaid?' · รับเงิน '+fmtD(r.datePaid):''}${r.note?' · '+esc(r.note):''}</div>
+      <div class="dts">แจ้ง ${fmtD(r.dateNotified)} · งบปี ${fmtD(r.fyEnd)}${r.datePaid?' · รับเงิน '+fmtD(r.datePaid):''}${r.incentive?' · Incentive '+fmtB(r.incentive):''}${r.assistantFee?' · ผู้ช่วย '+fmtB(r.assistantFee)+(r.assistantName?' ('+esc(r.assistantName)+')':''):''}${r.auditorShare?' · แบ่งผู้สอบ '+fmtB(r.auditorShare)+' / เรา '+fmtB(r.poomShare||0):''}${r.note?' · '+esc(r.note):''}</div>
       <div class="docs">${docs}</div>
       <div class="acts">
         ${!isSigned(r)?`<button class="a-sign" onclick="quickSign('${r.id}')">✍️ ลงชื่อวันนี้</button>`:''}
