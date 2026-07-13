@@ -532,6 +532,7 @@ function renderDash(){
     const a=byC[c],sg=a.filter(isSigned).length;
     return {name:c,count:a.length,signed:sg,remain:a.length-sg,pct:Math.round(sg/a.length*100),
       avg:Math.round(a.reduce((s,r)=>s+(r.fee||0),0)/a.length),
+      pnet:Math.round(a.reduce((s,r)=>s+poomNet(r),0)),
       unpaid:Math.round(a.filter(r=>!r.paid).reduce((s,r)=>s+net(r),0))};
   });
   renderContactTbl();
@@ -568,8 +569,8 @@ function thRow(t,cols){
 function renderContactTbl(){
   const rows=sortRows(_contactAgg,sortSt.contact);
   document.getElementById('tbContact').innerHTML=
-    thRow('contact',[['name','Contact'],['count','งบ',1],['signed','ลงชื่อ',1],['remain','เหลือ',1],['pct','%',1],['avg','เฉลี่ย/งบ (฿)',1],['unpaid','ค้างรับ (฿)',1]])+
-    rows.map(c=>`<tr><td>${esc(c.name)}</td><td class="r">${c.count}</td><td class="r">${c.signed}</td><td class="r">${c.remain}</td><td class="r">${c.pct}%</td><td class="r">${fmtN(c.avg)}</td><td class="r" style="color:${c.unpaid>0?'var(--red)':'var(--green)'}">${fmtN(c.unpaid)}</td></tr>`).join('');
+    thRow('contact',[['name','Contact'],['count','งบ',1],['signed','ลงชื่อ',1],['remain','เหลือ',1],['pct','%',1],['avg','เฉลี่ย/งบ (฿)',1],['pnet','สุทธิของเรา (฿)',1],['unpaid','ค้างรับ (฿)',1]])+
+    rows.map(c=>`<tr><td>${esc(c.name)}</td><td class="r">${c.count}</td><td class="r">${c.signed}</td><td class="r">${c.remain}</td><td class="r">${c.pct}%</td><td class="r">${fmtN(c.avg)}</td><td class="r">${fmtN(c.pnet)}</td><td class="r" style="color:${c.unpaid>0?'var(--red)':'var(--green)'}">${fmtN(c.unpaid)}</td></tr>`).join('');
 }
 function renderCust(){
   const q=document.getElementById('custSearch').value.trim().toLowerCase();
