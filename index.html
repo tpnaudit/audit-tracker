@@ -229,6 +229,8 @@ th.st .ar{font-size:9px;opacity:.9}
       <div><label>แถวตาม</label><select id="pvRow"></select></div>
       <div><label>แยกคอลัมน์ (ไม่บังคับ)</label><select id="pvCol"></select></div>
     </div>
+    <label style="margin-top:10px">ตัวกรอง (Filter — เลือกได้หลายเงื่อนไขพร้อมกัน)</label>
+    <div class="pivbar" id="pvFilters" style="margin:4px 0 2px"></div>
     <label style="margin-top:10px">ค่าที่แสดง (กดเลือกได้หลายตัว)</label>
     <div class="chips" id="pvVals" style="margin:4px 0 12px"></div>
     <div class="lsum" id="pvHint" style="margin:0 0 8px"></div>
@@ -634,12 +636,19 @@ const PIV_VALS={
   assist:{lb:'ค่าผู้ช่วย',agg:'sum',get:r=>r.assistantFee||0},
   avgFee:{lb:'ราคาเฉลี่ย/งบ',agg:'avg',get:r=>r.fee||0},
 };
+const PIV_FILTERS=['auditor','contact','payStatus','inSystem','signStatus','month','revenue'];
 let pivCfg=null,pivSort={ci:1,d:-1},_pivMatrix=null;
 function pivLoad(){
   if(pivCfg)return;
   try{pivCfg=JSON.parse(localStorage.getItem('auditPivotCfg'));}catch(e){}
   if(!pivCfg||!PIV_DIMS[pivCfg.row]||!Array.isArray(pivCfg.vals)||!pivCfg.vals.every(k=>PIV_VALS[k])||!pivCfg.vals.length)
-    pivCfg={row:'contact',vals:['count','fee','due'],col:''};
+    pivCfg={row:'contact',vals:['count','fee','due'],col:'',filters:{}};
+  if(!pivCfg.filters)pivCfg.filters={};
+}
+function pvFilter(fk,v){pivCfg.filters[fk]=v;pivSave();renderPivot();}
+function pvClearFilters(){pivCfg.filters={};pivSave();renderPivot();}
+function pivFiltered(){
+  return _dashRs.filter(r=>PIV_FILTERS.every(fk=>!pivCfg.filters[fk]||PIV_DIMS[fk].get(r)===pivCfg.filters[fk]));
 }
 function pivSave(){localStorage.setItem('auditPivotCfg',JSON.stringify(pivCfg));}
 function pvToggleVal(k){
@@ -659,9 +668,21 @@ function renderPivot(){
   document.getElementById('pvRow').innerHTML=Object.entries(PIV_DIMS).map(([k,d])=>`<option value="${k}" ${pivCfg.row===k?'selected':''}>${d.lb}</option>`).join('');
   document.getElementById('pvCol').innerHTML='<option value="">— ไม่แยก —</option>'+Object.entries(PIV_DIMS).filter(([k])=>k!=='company'&&k!==pivCfg.row).map(([k,d])=>`<option value="${k}" ${pivCfg.col===k?'selected':''}>${d.lb}</option>`).join('');
   document.getElementById('pvVals').innerHTML=Object.entries(PIV_VALS).map(([k,v])=>`<button class="chip ${pivCfg.vals.includes(k)?'on':''}" onclick="pvToggleVal('${k}')">${v.lb}</button>`).join('');
-  document.getElementById('pvHint').textContent=pivCfg.col?'แยกคอลัมน์อยู่ — ใช้ค่าตัวแรกที่เลือก ('+PIV_VALS[pivCfg.vals[0]].lb+') อย่างเดียว':'';
+  /* filter dropdowns */
+  document.getElementById('pvFilters').innerHTML=PIV_FILTERS.map(fk=>{
+    const d=PIV_DIMS[fk];
+    const om={};_dashRs.forEach(r=>{const v=d.get(r);if(!(v in om))om[v]=d.ord?d.ord(r):null;else if(d.ord)om[v]=Math.min(om[v],d.ord(r));});
+    const opts=Object.keys(om).sort(d.ord?(a,b)=>om[a]-om[b]:(a,b)=>a.localeCompare(b,'th'));
+    const cur=pivCfg.filters[fk]||'';
+    return `<div><label>${d.lb}</label><select onchange="pvFilter('${fk}',this.value)" style="${cur?'border-color:var(--teal);background:#eef9f7;':''}">
+      <option value="">ทั้งหมด</option>${opts.map(o=>`<option ${cur===o?'selected':''}>${esc(o)}</option>`).join('')}</select></div>`;
+  }).join('')+`<div style="align-self:flex-end"><button onclick="pvClearFilters()" style="border:none;border-radius:10px;padding:9px 14px;font-size:12.5px;font-weight:700;background:#eceff3;color:var(--ink)">ล้างตัวกรอง</button></div>`;
   /* group rows */
-  const rs=_dashRs,dim=PIV_DIMS[pivCfg.row];
+  const rs=pivFiltered(),dim=PIV_DIMS[pivCfg.row];
+  const nf=Object.values(pivCfg.filters).filter(Boolean).length;
+  document.getElementById('pvHint').textContent=
+    (nf?`กรอง ${nf} เงื่อนไข → เหลือ ${fmtN(rs.length)} งบ`:'')+
+    (pivCfg.col?(nf?' · ':'')+'แยกคอลัมน์อยู่ — ใช้ค่าตัวแรกที่เลือก ('+PIV_VALS[pivCfg.vals[0]].lb+') อย่างเดียว':'');
   const groups={},ordKey={};
   rs.forEach(r=>{const k=dim.get(r);(groups[k]=groups[k]||[]).push(r);
     if(dim.ord)ordKey[k]=Math.min(ordKey[k]??99,dim.ord(r));});
