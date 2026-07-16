@@ -127,6 +127,12 @@ label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bot
 #toast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-size:13.5px;font-weight:600;opacity:0;transition:.25s;z-index:99;pointer-events:none;white-space:nowrap}
 #toast.on{opacity:.95}
 
+/* ===== pivot builder ===== */
+.pivbar{display:flex;gap:10px;flex-wrap:wrap}
+.pivbar>div{flex:1 1 45%}
+.pivbar select{width:100%;padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;background:#fff;font-size:13.5px;font-weight:600}
+@media(min-width:760px){.pivbar>div{flex:0 1 240px}}
+
 /* ===== sortable table headers ===== */
 th.st{cursor:pointer;user-select:none;white-space:nowrap}
 th.st:hover{color:var(--navy2)}
@@ -216,6 +222,19 @@ th.st .ar{font-size:9px;opacity:.9}
 
   <h2>ภาษี — งบที่เข้าระบบ</h2>
   <div class="card tblwrap"><table id="tbTax"></table></div>
+
+  <h2>🧮 Pivot จัดเอง</h2>
+  <div class="card">
+    <div class="pivbar">
+      <div><label>แถวตาม</label><select id="pvRow"></select></div>
+      <div><label>แยกคอลัมน์ (ไม่บังคับ)</label><select id="pvCol"></select></div>
+    </div>
+    <label style="margin-top:10px">ค่าที่แสดง (กดเลือกได้หลายตัว)</label>
+    <div class="chips" id="pvVals" style="margin:4px 0 12px"></div>
+    <div class="lsum" id="pvHint" style="margin:0 0 8px"></div>
+    <div class="tblwrap"><table id="tbPivot"></table></div>
+    <button onclick="exportPivot()" style="margin-top:12px;border:none;border-radius:9px;padding:8px 14px;font-size:12.5px;font-weight:700;background:var(--navy2);color:#fff">📤 Export Pivot เป็น Excel</button>
+  </div>
 </section>
 
 <!-- ============ LIST ============ -->
@@ -546,7 +565,7 @@ function renderDash(){
   document.getElementById('tbTax').innerHTML=
     `<tr><th></th><th class="r">จำนวนงบ</th><th class="r">ราคา (฿)</th><th class="r">หัก ณ ที่จ่าย (฿)</th></tr>`+row('เข้าระบบ (Yes)',inS)+row('ไม่เข้าระบบ (No)',outS)+row('รวม',rs);
 
-  _dashRs=rs;renderCust();
+  _dashRs=rs;renderCust();renderPivot();
 }
 
 /* ===== ตารางเรียงได้ (คลิกหัวคอลัมน์) ===== */
@@ -588,6 +607,113 @@ function renderCust(){
   const more=document.getElementById('custMore');
   more.style.display=list.length>custLimit?'block':'none';
   more.textContent=`แสดงเพิ่มเติม (เหลืออีก ${fmtN(Math.max(list.length-custLimit,0))} ราย)`;
+}
+
+/* ===== Pivot จัดเอง ===== */
+const PIV_DIMS={
+  contact:{lb:'Contact ลูกค้า',get:r=>r.contact||'(ไม่ระบุ)'},
+  auditor:{lb:'Auditor',get:r=>r.auditor||'Poom'},
+  month:{lb:'รอบเดือน',get:r=>r.month?'รอบเดือน '+r.month:'(ไม่ระบุ)',ord:r=>r.month||99},
+  signMonth:{lb:'เดือนที่ลงชื่อ',get:r=>r.dateSigned?THM[+r.dateSigned.split('-')[1]-1]:(r.signedFlag?'ลงชื่อ(ไม่ระบุวัน)':'(ยังไม่ลงชื่อ)'),ord:r=>r.dateSigned?+r.dateSigned.split('-')[1]:(r.signedFlag?98:99)},
+  paidMonth:{lb:'เดือนที่รับเงิน',get:r=>r.datePaid?THM[+r.datePaid.split('-')[1]-1]:(r.paid?'รับแล้ว(ไม่ระบุวัน)':'(ยังไม่รับ)'),ord:r=>r.datePaid?+r.datePaid.split('-')[1]:(r.paid?98:99)},
+  signStatus:{lb:'สถานะลงชื่อ',get:r=>isSigned(r)?'ลงชื่อแล้ว':'รอลงชื่อ'},
+  payStatus:{lb:'สถานะเงิน',get:r=>r.paid?'รับเงินแล้ว':'ค้างรับ'},
+  inSystem:{lb:'เข้าระบบ',get:r=>r.inSystem?'เข้าระบบ':'ไม่เข้าระบบ'},
+  opinion:{lb:'ความเห็นผู้สอบ',get:r=>r.opinion||'ไม่มีเงื่อนไข'},
+  revenue:{lb:'ช่วงรายได้',get:r=>r.revenue||'(ไม่ระบุ)'},
+  company:{lb:'กิจการ (รายตัว)',get:r=>r.company},
+};
+const PIV_VALS={
+  count:{lb:'จำนวนงบ',agg:'sum',get:r=>1},
+  fee:{lb:'ราคา',agg:'sum',get:r=>r.fee||0},
+  wht:{lb:'หัก ณ ที่จ่าย',agg:'sum',get:r=>r.wht||0},
+  net:{lb:'รับสุทธิ',agg:'sum',get:net},
+  pnet:{lb:'สุทธิของเรา',agg:'sum',get:poomNet},
+  due:{lb:'ค้างรับ',agg:'sum',get:r=>r.paid?0:net(r)},
+  incentive:{lb:'Incentive',agg:'sum',get:r=>r.incentive||0},
+  assist:{lb:'ค่าผู้ช่วย',agg:'sum',get:r=>r.assistantFee||0},
+  avgFee:{lb:'ราคาเฉลี่ย/งบ',agg:'avg',get:r=>r.fee||0},
+};
+let pivCfg=null,pivSort={ci:1,d:-1},_pivMatrix=null;
+function pivLoad(){
+  if(pivCfg)return;
+  try{pivCfg=JSON.parse(localStorage.getItem('auditPivotCfg'));}catch(e){}
+  if(!pivCfg||!PIV_DIMS[pivCfg.row]||!Array.isArray(pivCfg.vals)||!pivCfg.vals.every(k=>PIV_VALS[k])||!pivCfg.vals.length)
+    pivCfg={row:'contact',vals:['count','fee','due'],col:''};
+}
+function pivSave(){localStorage.setItem('auditPivotCfg',JSON.stringify(pivCfg));}
+function pvToggleVal(k){
+  const i=pivCfg.vals.indexOf(k);
+  if(i>=0){if(pivCfg.vals.length>1)pivCfg.vals.splice(i,1);}
+  else pivCfg.vals.push(k);
+  pivSave();renderPivot();
+}
+function aggV(recs,v){
+  if(!recs.length)return 0;
+  const s=recs.reduce((a,r)=>a+v.get(r),0);
+  return v.agg==='avg'?s/recs.length:s;
+}
+function renderPivot(){
+  pivLoad();
+  /* controls */
+  document.getElementById('pvRow').innerHTML=Object.entries(PIV_DIMS).map(([k,d])=>`<option value="${k}" ${pivCfg.row===k?'selected':''}>${d.lb}</option>`).join('');
+  document.getElementById('pvCol').innerHTML='<option value="">— ไม่แยก —</option>'+Object.entries(PIV_DIMS).filter(([k])=>k!=='company'&&k!==pivCfg.row).map(([k,d])=>`<option value="${k}" ${pivCfg.col===k?'selected':''}>${d.lb}</option>`).join('');
+  document.getElementById('pvVals').innerHTML=Object.entries(PIV_VALS).map(([k,v])=>`<button class="chip ${pivCfg.vals.includes(k)?'on':''}" onclick="pvToggleVal('${k}')">${v.lb}</button>`).join('');
+  document.getElementById('pvHint').textContent=pivCfg.col?'แยกคอลัมน์อยู่ — ใช้ค่าตัวแรกที่เลือก ('+PIV_VALS[pivCfg.vals[0]].lb+') อย่างเดียว':'';
+  /* group rows */
+  const rs=_dashRs,dim=PIV_DIMS[pivCfg.row];
+  const groups={},ordKey={};
+  rs.forEach(r=>{const k=dim.get(r);(groups[k]=groups[k]||[]).push(r);
+    if(dim.ord)ordKey[k]=Math.min(ordKey[k]??99,dim.ord(r));});
+  let keys=Object.keys(groups).sort(dim.ord?(a,b)=>ordKey[a]-ordKey[b]:(a,b)=>a.localeCompare(b,'th'));
+  const vals=(pivCfg.col?pivCfg.vals.slice(0,1):pivCfg.vals).map(k=>PIV_VALS[k]);
+  /* column dimension */
+  let colKeys=null,cdim=null,colOrd={};
+  if(pivCfg.col){cdim=PIV_DIMS[pivCfg.col];const set={};
+    rs.forEach(r=>{const k=cdim.get(r);set[k]=1;if(cdim.ord)colOrd[k]=Math.min(colOrd[k]??99,cdim.ord(r));});
+    colKeys=Object.keys(set).sort(cdim.ord?(a,b)=>colOrd[a]-colOrd[b]:(a,b)=>a.localeCompare(b,'th'));}
+  /* matrix: [name, v1, v2, ..., (รวม)] */
+  const hdr=[dim.lb,...(colKeys?[...colKeys,'รวม']:vals.map(v=>v.lb))];
+  const rows=keys.map(k=>{
+    const g=groups[k];
+    if(colKeys){
+      const cells=colKeys.map(ck=>aggV(g.filter(r=>cdim.get(r)===ck),vals[0]));
+      return [k,...cells,aggV(g,vals[0])];
+    }
+    return [k,...vals.map(v=>aggV(g,v))];
+  });
+  /* total row */
+  const total=colKeys
+    ?['รวมทั้งหมด',...colKeys.map(ck=>aggV(rs.filter(r=>cdim.get(r)===ck),vals[0])),aggV(rs,vals[0])]
+    :['รวมทั้งหมด',...vals.map(v=>aggV(rs,v))];
+  /* sort by clicked column (0=ชื่อ) */
+  if(pivSort.ci>=hdr.length)pivSort={ci:1,d:-1};
+  const sorted=[...rows].sort((a,b)=>{
+    const x=a[pivSort.ci],y=b[pivSort.ci];
+    return (typeof x==='string'?x.localeCompare(y,'th'):(x||0)-(y||0))*pivSort.d;
+  });
+  _pivMatrix={hdr,rows:sorted,total};
+  document.getElementById('tbPivot').innerHTML=
+    '<tr>'+hdr.map((h,i)=>`<th class="st ${i?'r':''}" onclick="pvSortBy(${i})">${esc(h)} <span class="ar">${pivSort.ci===i?(pivSort.d>0?'▲':'▼'):''}</span></th>`).join('')+'</tr>'+
+    sorted.map(row=>'<tr>'+row.map((c,i)=>i?`<td class="r">${fmtN(Math.round(c))}</td>`:`<td>${esc(c)}</td>`).join('')+'</tr>').join('')+
+    '<tr style="font-weight:800;background:#f6f9fb">'+total.map((c,i)=>i?`<td class="r">${fmtN(Math.round(c))}</td>`:`<td>${esc(c)}</td>`).join('')+'</tr>';
+}
+function pvSortBy(ci){
+  if(pivSort.ci===ci)pivSort.d*=-1;
+  else pivSort={ci,d:ci===0?1:-1};
+  renderPivot();
+}
+document.getElementById('pvRow').addEventListener('change',e=>{pivCfg.row=e.target.value;if(pivCfg.col===pivCfg.row)pivCfg.col='';pivSort={ci:1,d:-1};pivSave();renderPivot();});
+document.getElementById('pvCol').addEventListener('change',e=>{pivCfg.col=e.target.value;pivSort={ci:1,d:-1};pivSave();renderPivot();});
+function exportPivot(){
+  if(typeof XLSX==='undefined'){toast('⚠️ ต้องต่อเน็ตครั้งแรกเพื่อโหลดตัวช่วย Excel');return;}
+  if(!_pivMatrix)return;
+  const aoa=[_pivMatrix.hdr,..._pivMatrix.rows.map(r=>r.map((c,i)=>i?Math.round(c):c)),_pivMatrix.total.map((c,i)=>i?Math.round(c):c)];
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws['!cols']=_pivMatrix.hdr.map((h,i)=>({wch:i?14:30}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Pivot');
+  XLSX.writeFile(wb,'Pivot '+PIV_DIMS[pivCfg.row].lb+' '+curYear+'.xlsx');
+  toast('📤 Export Pivot แล้ว');
 }
 
 /* ===== แท็บตามลูกค้า (การ์ดไว้แคปส่งลูกค้า) ===== */
