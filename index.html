@@ -284,6 +284,11 @@ th.st .ar{font-size:9px;opacity:.9}
 <!-- ============ FORM ============ -->
 <section class="page" id="pg-form">
   <h2 id="formTitle">เพิ่มงบใหม่</h2>
+  <div class="frm" style="margin-bottom:12px;background:#eef9f7;border:1.5px dashed var(--teal)">
+    <label>📎 งบต่อเนื่องจากปีก่อน — พิมพ์ชื่อกิจการแล้วเลือก ระบบจะเติมข้อมูลเดิมและเลื่อนรอบเป็นปีถัดไปให้</label>
+    <input id="prevPick" list="dlPrev" placeholder="🔍 ค้นหากิจการจากปีก่อนๆ..." autocomplete="off">
+    <datalist id="dlPrev"></datalist>
+  </div>
   <div class="frm">
     <input type="hidden" id="f_id">
     <div class="frow one"><div><label>ชื่อกิจการ *</label><input id="f_company" placeholder="บจ. ..."></div></div>
@@ -933,6 +938,47 @@ function fillDatalists(){
   dl('dlAuditor',lists.auditors);dl('dlContact',lists.contacts);dl('dlAssistant',lists.assistants);
 }
 function fillMonthSel(){F('f_month').innerHTML='<option value="">-</option>'+Array.from({length:12},(_,i)=>`<option value="${i+1}">รอบเดือน ${i+1} (${THM[i]})</option>`).join('');}
+
+/* ===== งบต่อเนื่องจากปีก่อน ===== */
+let prevMap={};
+function fillPrevList(){
+  prevMap={};
+  const opts=[...live()].sort((a,b)=>b.year-a.year||a.company.localeCompare(b.company,'th')).map(r=>{
+    const key=`${r.company} — ปี ${r.year}`;
+    if(prevMap[key])return '';
+    prevMap[key]=r.id;
+    return `<option value="${esc(key)}">`;
+  }).join('');
+  document.getElementById('dlPrev').innerHTML=opts;
+}
+function shiftYearBE(d){ // "2568-12-31" → "2569-12-31"
+  const m=String(d||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!m)return '';
+  let[,y,mo,dd]=m;
+  if(mo==='02'&&dd==='29')dd='28';
+  return (+y+1)+'-'+mo+'-'+dd;
+}
+document.getElementById('prevPick').addEventListener('change',e=>{
+  const id=prevMap[e.target.value.trim()];
+  if(!id)return;
+  const r=findRec(id);if(!r)return;
+  resetForm();
+  F('f_company').value=r.company;F('f_taxId').value=r.taxId||'';
+  F('f_year').value=r.year+1;
+  F('f_auditor').value=r.auditor||'Poom';F('f_contact').value=r.contact||'';
+  F('f_month').value=r.month||'';F('f_fyEnd').value=shiftYearBE(r.fyEnd);
+  F('f_revenue').value=r.revenue||'';F('f_inSystem').checked=!!r.inSystem;
+  F('f_fee').value=r.fee||0;F('f_incentive').value=r.incentive||0;F('f_wht').value=r.wht||0;whtTouched=true;
+  F('f_assistantFee').value=r.assistantFee||0;F('f_assistantName').value=r.assistantName||'';
+  F('f_poomShare').value=r.poomShare||0;F('f_auditorShare').value=r.auditorShare||0;
+  F('splitRow').style.display=(r.auditor&&r.auditor.toLowerCase()!=='poom')?'grid':'none';
+  /* เอกสาร: ที่ปีก่อนไม่ต้องใช้ → ไม่ต้องใช้เหมือนเดิม, ที่เหลือเริ่มเป็นค้าง */
+  Object.keys(DOCS).forEach(k=>F('f_doc_'+k).value=docVal(r,k)==='na'?'na':'no');
+  document.getElementById('formTitle').textContent='เพิ่มงบใหม่ (ต่อจาก '+r.company+' ปี '+r.year+')';
+  e.target.value='';
+  updNet();
+  toast('📎 ดึงข้อมูล "'+r.company+'" มาแล้ว — ตั้งเป็นปี '+(r.year+1));
+});
 function resetForm(){
   F('f_id').value='';document.getElementById('formTitle').textContent='เพิ่มงบใหม่';
   ['f_company','f_taxId','f_auditor','f_contact','f_fyEnd','f_dateNotified','f_dateSigned','f_datePaid','f_assistantName','f_note'].forEach(id=>F(id).value='');
@@ -942,7 +988,7 @@ function resetForm(){
   F('f_inSystem').checked=false;F('f_paid').checked=false;F('f_signedFlag').checked=false;
   Object.keys(DOCS).forEach(k=>F('f_doc_'+k).value='no');
   F('f_dateNotified').value=todayBE();whtTouched=false;F('splitRow').style.display='none';
-  fillDatalists();updNet();
+  fillDatalists();fillPrevList();updNet();
 }
 function editRec(id){
   const r=findRec(id);if(!r)return;
