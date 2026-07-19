@@ -285,8 +285,12 @@ th.st .ar{font-size:9px;opacity:.9}
 <section class="page" id="pg-form">
   <h2 id="formTitle">เพิ่มงบใหม่</h2>
   <div class="frm" style="margin-bottom:12px;background:#eef9f7;border:1.5px dashed var(--teal)">
-    <label>📎 งบต่อเนื่องจากปีก่อน — พิมพ์ชื่อกิจการแล้วเลือก ระบบจะเติมข้อมูลเดิมและเลื่อนรอบเป็นปีถัดไปให้</label>
-    <input id="prevPick" list="dlPrev" placeholder="🔍 ค้นหากิจการจากปีก่อนๆ..." autocomplete="off">
+    <label>📎 งบต่อเนื่องจากปีก่อน — เลือก Contact แล้วเลือกกิจการ ระบบจะเติมข้อมูลเดิมและเลื่อนรอบเป็นปีถัดไปให้</label>
+    <div class="frow half" style="margin-bottom:8px">
+      <div><select id="prevContact" onchange="fillPrevCompanies()"><option value="">— เลือก Contact —</option></select></div>
+      <div><select id="prevCompany" onchange="prefillFromSel()"><option value="">— เลือกกิจการ —</option></select></div>
+    </div>
+    <input id="prevPick" list="dlPrev" placeholder="🔍 หรือพิมพ์ค้นหาชื่อกิจการตรงๆ..." autocomplete="off">
     <datalist id="dlPrev"></datalist>
   </div>
   <div class="frm">
@@ -943,13 +947,30 @@ function fillMonthSel(){F('f_month').innerHTML='<option value="">-</option>'+Arr
 let prevMap={};
 function fillPrevList(){
   prevMap={};
-  const opts=[...live()].sort((a,b)=>b.year-a.year||a.company.localeCompare(b.company,'th')).map(r=>{
+  const sorted=[...live()].sort((a,b)=>b.year-a.year||a.company.localeCompare(b.company,'th'));
+  document.getElementById('dlPrev').innerHTML=sorted.map(r=>{
     const key=`${r.company} — ปี ${r.year}`;
     if(prevMap[key])return '';
     prevMap[key]=r.id;
     return `<option value="${esc(key)}">`;
   }).join('');
-  document.getElementById('dlPrev').innerHTML=opts;
+  /* dropdown Contact: เรียงตามจำนวนงบมาก→น้อย */
+  const byC={};live().forEach(r=>{const c=r.contact||'(ไม่ระบุ)';byC[c]=(byC[c]||0)+1;});
+  const el=document.getElementById('prevContact');const cur=el.value;
+  el.innerHTML='<option value="">— เลือก Contact —</option>'+Object.keys(byC).sort((a,b)=>byC[b]-byC[a]).map(c=>`<option value="${esc(c)}">${esc(c)} (${byC[c]})</option>`).join('');
+  if([...el.options].some(o=>o.value===cur))el.value=cur;
+  fillPrevCompanies();
+}
+function fillPrevCompanies(){
+  const c=document.getElementById('prevContact').value;
+  const el=document.getElementById('prevCompany');
+  if(!c){el.innerHTML='<option value="">— เลือกกิจการ —</option>';return;}
+  const rs=[...live()].filter(r=>(r.contact||'(ไม่ระบุ)')===c).sort((a,b)=>b.year-a.year||a.company.localeCompare(b.company,'th'));
+  el.innerHTML='<option value="">— เลือกกิจการ ('+rs.length+') —</option>'+rs.map(r=>`<option value="${r.id}">${esc(r.company)} — ปี ${r.year}</option>`).join('');
+}
+function prefillFromSel(){
+  const id=document.getElementById('prevCompany').value;
+  if(id)prefillFromId(id);
 }
 function shiftYearBE(d){ // "2568-12-31" → "2569-12-31"
   const m=String(d||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -961,8 +982,14 @@ function shiftYearBE(d){ // "2568-12-31" → "2569-12-31"
 document.getElementById('prevPick').addEventListener('change',e=>{
   const id=prevMap[e.target.value.trim()];
   if(!id)return;
+  prefillFromId(id);
+  e.target.value='';
+});
+function prefillFromId(id){
   const r=findRec(id);if(!r)return;
+  const keepContact=document.getElementById('prevContact').value;
   resetForm();
+  document.getElementById('prevContact').value=keepContact;fillPrevCompanies();
   F('f_company').value=r.company;F('f_taxId').value=r.taxId||'';
   F('f_year').value=r.year+1;
   F('f_auditor').value=r.auditor||'Poom';F('f_contact').value=r.contact||'';
@@ -975,10 +1002,9 @@ document.getElementById('prevPick').addEventListener('change',e=>{
   /* เอกสาร: ที่ปีก่อนไม่ต้องใช้ → ไม่ต้องใช้เหมือนเดิม, ที่เหลือเริ่มเป็นค้าง */
   Object.keys(DOCS).forEach(k=>F('f_doc_'+k).value=docVal(r,k)==='na'?'na':'no');
   document.getElementById('formTitle').textContent='เพิ่มงบใหม่ (ต่อจาก '+r.company+' ปี '+r.year+')';
-  e.target.value='';
   updNet();
   toast('📎 ดึงข้อมูล "'+r.company+'" มาแล้ว — ตั้งเป็นปี '+(r.year+1));
-});
+}
 function resetForm(){
   F('f_id').value='';document.getElementById('formTitle').textContent='เพิ่มงบใหม่';
   ['f_company','f_taxId','f_auditor','f_contact','f_fyEnd','f_dateNotified','f_dateSigned','f_datePaid','f_assistantName','f_note'].forEach(id=>F(id).value='');
