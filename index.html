@@ -1027,7 +1027,23 @@ function updNet(){const n=(+F('f_fee').value||0)+(+F('f_incentive').value||0)-(+
 function fillDatalists(){
   normalizeData();
   const dl=(id,vals)=>document.getElementById(id).innerHTML=vals.map(v=>`<option value="${esc(v)}">`).join('');
-  dl('dlAuditor',lists.auditors);dl('dlContact',lists.contacts);dl('dlAssistant',lists.assistants);
+  dl('dlAuditor',lists.auditors);
+  dl('dlContact',[...new Set([...lists.contacts,...crmContacts])].sort((a,b)=>a.localeCompare(b,'th')));
+  dl('dlAssistant',lists.assistants);
+}
+/* ===== อ่านชื่อคอนแทคจาก audit-crm (repo เดียวกัน) มาเป็นตัวเลือกเพิ่ม ===== */
+const CRM_FILE='https://api.github.com/repos/tpnaudit/audit-tracker-data/contents/crm.enc.json';
+let crmContacts=[];
+async function loadCrmContacts(){
+  if(!syncCfg||!syncCfg.token||!syncCfg.pin)return;
+  try{
+    const res=await fetch(CRM_FILE+'?ref='+GH_BRANCH+'&t='+Date.now(),{headers:ghHdr()});
+    if(!res.ok)return;
+    const j=await res.json();
+    const text=j.content?atob(j.content.replace(/\n/g,'')):await (await fetch(j.download_url)).text();
+    const data=await decPayload(JSON.parse(text),syncCfg.pin);
+    crmContacts=[...new Set((data.records||[]).filter(r=>!r.deleted&&r.name).map(r=>r.name.trim()))];
+  }catch(e){console.warn('loadCrm',e);}
 }
 function fillMonthSel(){F('f_month').innerHTML='<option value="">-</option>'+Array.from({length:12},(_,i)=>`<option value="${i+1}">รอบเดือน ${i+1} (${THM[i]})</option>`).join('');}
 
@@ -1420,6 +1436,7 @@ async function syncNow(manual,retried){
     const pg=document.querySelector('.page.show').id;
     if(pg==='pg-dash')renderDash();else if(pg==='pg-list')renderList();else if(pg==='pg-data')renderDataStat();
     if(manual)toast('☁️ Sync สำเร็จ ('+fmtN(live().length)+' งบ)');
+    loadCrmContacts().then(()=>{if(document.getElementById('pg-form').classList.contains('show'))fillDatalists();});
   }catch(err){
     console.error('sync:',err);
     syncing=false;
