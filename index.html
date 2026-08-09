@@ -207,6 +207,7 @@ th.st .ar{font-size:9px;opacity:.9}
 
   <h2>ยอดรับเงินตามเดือน (ตามวันที่รับเงิน)</h2>
   <div class="card"><div class="chartbox"><canvas id="chPaidMonth"></canvas></div></div>
+  <div id="paidMonthTbl"></div>
 
   <div class="grid2">
     <div><h2>แยกตามผู้สอบ (Auditor)</h2>
@@ -681,8 +682,8 @@ function renderDash(){
   /* paid-by-month chart */
   const pm=Array(13).fill(0),pn=Array(13).fill(0);
   rs.filter(r=>r.paid).forEach(r=>{
-    let idx=12;
-    if(r.datePaid){const m=+r.datePaid.split('-')[1];if(m>=1&&m<=12)idx=m-1;}
+    let idx=12;const iso=parseDateBE(r.datePaid);
+    if(iso){const m=+iso.split('-')[1];if(m>=1&&m<=12)idx=m-1;}
     pm[idx]+=net(r);pn[idx]+=poomNet(r);
   });
   mkChart('chPaidMonth',{type:'bar',data:{labels:[...THM,'ไม่ระบุวัน'],datasets:[
@@ -691,6 +692,15 @@ function renderDash(){
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{family:'Noto Sans Thai'}}},
       tooltip:{callbacks:{label:c=>c.dataset.label+': ฿'+c.parsed.y.toLocaleString('th-TH')}}},
       scales:{y:{beginAtZero:true,ticks:{callback:v=>(v/1000)+'k'}}}}});
+  /* ตารางรับสุทธิ/สุทธิของเรา รายเดือน (ดูตัวเลขง่ายๆ) */
+  const pmRows=[...THM,'ไม่ระบุวัน'].map((lb,i)=>({lb,net:pm[i],our:pn[i]})).filter(x=>x.net||x.our);
+  const pmTot=pm.reduce((a,b)=>a+b,0),pnTot=pn.reduce((a,b)=>a+b,0);
+  document.getElementById('paidMonthTbl').innerHTML=pmRows.length?`<div class="card tblwrap">
+    <table style="width:100%;font-size:13px">
+      <thead><tr><th style="text-align:left">เดือนที่รับเงิน</th><th class="r">รับสุทธิ</th><th class="r">สุทธิของเรา</th></tr></thead>
+      <tbody>${pmRows.map(x=>`<tr><td style="font-weight:600">${x.lb}</td><td class="r">${fmtB(x.net)}</td><td class="r" style="font-weight:800;color:#0e9f8a">${fmtB(x.our)}</td></tr>`).join('')}</tbody>
+      <tfoot><tr style="border-top:2px solid var(--line);font-weight:800"><td>รวมทั้งปี</td><td class="r">${fmtB(pmTot)}</td><td class="r" style="color:#0e9f8a">${fmtB(pnTot)}</td></tr></tfoot>
+    </table></div>`:'';
 
   /* auditor chart */
   const byA={};rs.forEach(r=>{const a=r.auditor||'Poom';byA[a]=(byA[a]||0)+1;});
