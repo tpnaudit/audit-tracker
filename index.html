@@ -1091,7 +1091,8 @@ function renderList(){
         ${!isSigned(r)?`<button class="a-sign" onclick="quickSign('${r.id}')">✍️ ลงชื่อวันนี้</button>`:''}
         ${!r.paid?`<button class="a-paid" onclick="quickPaid('${r.id}')">💰 รับเงินแล้ว</button>`:''}
         <button class="a-edit" onclick="editRec('${r.id}')">✏️ แก้ไข</button>
-        <button class="a-edit" style="background:#e0f2fe;color:#075985" onclick="dupNextYear('${r.id}')">⧉ ทำซ้ำปีถัดไป</button>
+        <button class="a-edit" style="background:#e0f2fe;color:#075985" title="ลูกค้าจ้างต่อ — ขึ้นปีงบใหม่ (Rollforward) รีเซ็ตวันที่/เงิน" onclick="dupNextYear('${r.id}')">🔄 ต่อปีหน้า</button>
+        <button class="a-edit" style="background:#fef3c7;color:#92400e" title="ส่งล่าช้า ลงนามปีหน้า — คัดลอกทั้งหมด ปีงบเดิม" onclick="dupSameYear('${r.id}')">📋 ยกไปปีหน้า</button>
         <button class="a-del" onclick="delRec('${r.id}')">🗑</button>
       </div>`}</div>`;
   }).join('')||'<div class="card" style="text-align:center;color:var(--muted)">ไม่พบรายการ</div>';
@@ -1294,6 +1295,15 @@ function prefillFromId(id){
 }
 /* ทำซ้ำงบเดิมเป็นปีถัดไป (ลูกค้าจ้างหลายปี/ทำย้อนหลัง) — เปิดฟอร์มพร้อมข้อมูลเดิม เปลี่ยนปี+1 แก้ปีได้ */
 function dupNextYear(id){prefillFromId(id);showPage('pg-form');}
+/* ยกงบเดิมไปทะเบียนปีหน้า — คัดลอกทั้งหมด คงปีงบเดิม (กรณีลูกค้าส่งล่าช้า ไปลงนามปีหน้า) */
+function dupSameYear(id){
+  const r=findRec(id);if(!r)return;
+  editRec(id);                              // โหลดทุกฟิลด์เข้าฟอร์ม (รวมวันที่/เอกสาร/เงิน)
+  F('f_id').value='';                        // เคลียร์ id → บันทึกเป็นรายการใหม่
+  F('f_year').value=r.year+1;                // เข้าทะเบียนปีหน้า แต่ fyEnd (ปีงบ) คงเดิม
+  document.getElementById('formTitle').textContent='📋 ยกงบไปทะเบียนปี '+(r.year+1)+' (คัดลอกทั้งหมด · ปีงบเดิม): '+r.company;
+  toast('📋 คัดลอกทั้งหมด → ทะเบียนปี '+(r.year+1)+' (ปีงบเดิม) · ตรวจแล้วกดบันทึก');
+}
 /* จัดระเบียบครั้งเดียว: รวมชื่อบอม → P'Bom, และปิดงาน (รับเงิน+ลงชื่อ) ทุกงบของ P'Bom/P'June */
 function cleanupBomJune(){
   if(!confirm("จัดระเบียบข้อมูล:\n• รวมชื่อ \"พี่บอม/บอม\" → P'Bom\n• ตั้งทุกงบของ P'Bom และ P'June เป็น รับเงินแล้ว + ลงชื่อแล้ว\n\nแนะนำ Export JSON สำรองก่อน — กด OK เพื่อดำเนินการ")) return;
