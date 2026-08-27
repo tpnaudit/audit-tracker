@@ -1198,15 +1198,20 @@ F('f_inSystem').addEventListener('change',()=>{if(!whtTouched)autoWht();updNet()
 function commFromPct(){const pct=+F('f_commPct').value||0;if(pct>0)F('f_commAmt').value=Math.round((+F('f_fee').value||0)*pct/100*100)/100;}
 F('f_commPct').addEventListener('input',()=>{commManual=false;commFromPct();updNet();});
 F('f_commAmt').addEventListener('input',()=>{commManual=true;F('f_commPct').value=0;updNet();});
-F('f_auditor').addEventListener('input',()=>{F('splitRow').style.display=(F('f_auditor').value.trim()&&F('f_auditor').value.trim().toLowerCase()!=='poom')?'grid':'none';});
+F('f_auditor').addEventListener('input',()=>{const sp=!!(F('f_auditor').value.trim()&&F('f_auditor').value.trim().toLowerCase()!=='poom');F('splitRow').style.display=sp?'grid':'none';if(sp){auditorShareTouched=false;autoAuditorShare();}});
 F('f_paid').addEventListener('change',()=>{if(F('f_paid').checked&&!F('f_datePaid').value)setDF('f_datePaid',todayBE());});
 F('f_fyEnd').addEventListener('input',autoStmt);
 F('f_stmtType').addEventListener('change',()=>{stmtTouched=true;});
+/* ส่วนของผู้สอบอื่น = รับสุทธิ − ส่วนของ Poom (เฉพาะงบส่งต่อ) — auto จนกว่าจะพิมพ์เอง */
+let auditorShareTouched=false;
+function autoAuditorShare(){if(auditorShareTouched||F('splitRow').style.display==='none')return;const n=(+F('f_fee').value||0)+(+F('f_incentive').value||0)-(+F('f_wht').value||0);F('f_auditorShare').value=Math.round((n-(+F('f_poomShare').value||0))*100)/100;}
+F('f_poomShare').addEventListener('input',autoAuditorShare);
+F('f_auditorShare').addEventListener('input',()=>{auditorShareTouched=true;});
 function updNet(){const n=(+F('f_fee').value||0)+(+F('f_incentive').value||0)-(+F('f_wht').value||0);
   const assist=+F('f_assistantFee').value||0,comm=+F('f_commAmt').value||0;
   let t='รับสุทธิ: '+fmtB(n);
   if(assist||comm){const p=[];if(assist)p.push('ผู้ช่วย '+fmtB(assist));if(comm)p.push('ref ลูกค้า '+fmtB(comm));t+=' · สุทธิของเรา '+fmtB(n-assist-comm)+' (หัก '+p.join(' + ')+')';}
-  F('netBox').textContent=t;}
+  F('netBox').textContent=t;autoAuditorShare();}
 function fillDatalists(){
   normalizeData();
   const dl=(id,vals)=>document.getElementById(id).innerHTML=vals.map(v=>`<option value="${esc(v)}">`).join('');
@@ -1285,7 +1290,7 @@ function prefillFromId(id){
   F('f_fee').value=r.fee||0;F('f_incentive').value=r.incentive||0;whtTouched=false;autoWht(); // คิด WHT ใหม่ตามราคา+สถานะเข้าระบบที่ยกมา
   F('f_assistantFee').value=r.assistantFee||0;F('f_assistantName').value=r.assistantName||'';
   F('f_commPct').value=0;F('f_commAmt').value=0;commManual=false; // ref ให้เฉพาะปีแรก — ต่อปีถัดไปรีเซ็ต
-  F('f_poomShare').value=r.poomShare||0;F('f_auditorShare').value=r.auditorShare||0;
+  F('f_poomShare').value=r.poomShare||0;F('f_auditorShare').value=r.auditorShare||0;auditorShareTouched=false;
   F('splitRow').style.display=(r.auditor&&r.auditor.toLowerCase()!=='poom')?'grid':'none';
   /* เอกสาร: ที่ปีก่อนไม่ต้องใช้ → ไม่ต้องใช้เหมือนเดิม, ที่เหลือเริ่มเป็นค้าง */
   Object.keys(DOCS).forEach(k=>F('f_doc_'+k).value=docVal(r,k)==='na'?'na':'no');
@@ -1331,7 +1336,7 @@ function resetForm(){
   F('f_year').value=curYear||new Date().getFullYear()+543;
   F('f_month').value='';F('f_opinion').value='';F('f_revenue').value='';
   ['f_fee','f_incentive','f_wht','f_assistantFee','f_poomShare','f_auditorShare','f_commPct','f_commAmt'].forEach(id=>F(id).value=0);
-  commManual=false;F('f_stmtType').value='op';stmtTouched=false;
+  commManual=false;F('f_stmtType').value='op';stmtTouched=false;auditorShareTouched=false;
   F('f_inSystem').checked=false;F('f_paid').checked=false;F('f_signedFlag').checked=false;
   Object.keys(DOCS).forEach(k=>F('f_doc_'+k).value='no');
   setDF('f_dateNotified',todayBE());whtTouched=false;F('splitRow').style.display='none';
@@ -1349,6 +1354,7 @@ function editRec(id){
   F('f_assistantFee').value=r.assistantFee||0;F('f_assistantName').value=r.assistantName||'';
   F('f_commPct').value=r.commissionPct||0;F('f_commAmt').value=r.commission||0;commManual=!(r.commissionPct>0)&&(r.commission>0);
   F('f_poomShare').value=r.poomShare||0;F('f_auditorShare').value=r.auditorShare||0;
+  {const exp=Math.round(((+r.fee||0)+(+r.incentive||0)-(+r.wht||0)-(+r.poomShare||0))*100)/100;auditorShareTouched=!!(r.auditorShare&&Math.abs((+r.auditorShare||0)-exp)>=0.5);}
   F('f_stmtType').value=guessStmt(r);stmtTouched=true;
   F('f_paid').checked=!!r.paid;setDF('f_datePaid',r.datePaid);
   Object.keys(DOCS).forEach(k=>F('f_doc_'+k).value=docVal(r,k));
