@@ -173,32 +173,36 @@ th.st .ar{font-size:9px;opacity:.9}
 .umsg{font-size:12.5px;color:var(--red);min-height:18px;margin-bottom:6px;font-weight:600}
 .ubox .skip{background:none;border:none;color:var(--muted);font-size:12px;margin-top:10px;text-decoration:underline}
 
-/* ===================== TPN Design (Claude Design) — flat editorial skin ===================== */
-:root{ --radius:2px; --shadow:none; }
+/* ===================== TPN Design System (Claude Design — exact tokens) ===================== */
+/* paper #fff · tint #eef7f8 · ink #1d2b33 · muted #5d6b73 · teal-deep #0e5e6f · teal #1a8a9a · hairline #dbe5e8 · risk #b4501b */
+:root{ --ink:#1d2b33; --muted:#5d6b73; --radius:4px; --shadow:none; }
 header{background:var(--navy);box-shadow:none;border-bottom:3px solid var(--teal)}
 .htitle small{opacity:.82}
 h2{font-size:17px;color:var(--navy);letter-spacing:.005em}
-/* white-paper surfaces: hairline border + teal top-rule, flat, sharp */
-.card,.kpi,.item,.fbar,.frm,.dbtn{background:#fff;box-shadow:none;border:1px solid var(--line);border-top:2px solid var(--teal);border-radius:2px}
+/* panels: white paper, hairline border + teal top-rule, flat, SHARP (radius-none) */
+.card,.kpi,.item,.fbar,.frm,.dbtn{background:#fff;box-shadow:none;border:1px solid var(--line);border-top:2px solid var(--teal);border-radius:0}
 .kpi{padding:14px 15px} .kpi .lb{font-weight:600}
 .item .fee{color:var(--navy)}
-/* buttons: flat, sharp */
-.btn{border-radius:2px} .btn-p{background:var(--navy)}
+/* buttons & small boxes: radius-sm 4px, flat */
+.btn{border-radius:4px} .btn-p{background:var(--navy)}
 .btn-g{background:#fff;border:1.5px solid var(--navy);color:var(--navy)}
-.acts button{border-radius:2px}
-#moreBtn{background:#fff;border:1px solid var(--line);border-radius:2px;color:var(--navy)}
-/* chips & badges: sharp */
-.chip{border-radius:2px} .chip.on{border-color:var(--navy);background:#dff0f1;color:var(--navy)}
-.badge{border-radius:2px;font-weight:600}
-/* inputs: sharp, teal focus */
-.fbar input[type=search],.fbar select,.frm input,.frm select,.frm textarea,.pivbar select,.dwrap .dcal,.ubox input{border-radius:2px}
+.acts button{border-radius:4px}
+#moreBtn{background:#fff;border:1px solid var(--line);border-radius:4px;color:var(--navy)}
+.chip{border-radius:4px} .chip.on{border-color:var(--navy);background:#dff0f1;color:var(--navy)}
+.badge{font-weight:600} /* status pills stay pills (radius-pill) */
+/* inputs: radius-sm, teal focus */
+.fbar input[type=search],.fbar select,.frm input,.frm select,.frm textarea,.pivbar select,.dwrap .dcal,.ubox input{border-radius:4px}
 .frm input:focus,.frm select:focus,.ubox input:focus{border-color:var(--teal)}
-.ck{border-radius:2px}
-.netbox{background:#e7f4f3;color:var(--navy);border-radius:2px;border-left:3px solid var(--teal)}
+.ck{border-radius:4px}
+/* net/recommendation box: tint panel + teal top-rule (no left-border trope) */
+.netbox{background:var(--bg);color:var(--navy);border-radius:0;border-top:2px solid var(--teal)}
 .fsec{color:var(--navy)}
 nav button.active{color:var(--navy)}
-/* client-facing capture card + unlock */
-.ccard{border-radius:2px;border:1px solid var(--line);border-top:3px solid var(--teal);box-shadow:none}
+/* table header: teal-deep fill, white label (design: table header fill) */
+th{background:var(--navy);color:#fff;border-bottom:none;font-weight:600;letter-spacing:.02em}
+th.st:hover{color:#bfe6e8}
+/* client capture card + unlock */
+.ccard{border-radius:0;border:1px solid var(--line);border-top:3px solid var(--teal);box-shadow:none}
 .cchead{background:var(--navy)}
 .ubox{border-radius:4px}
 </style>
