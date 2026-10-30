@@ -3,29 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0f3d5c">
+<meta name="theme-color" content="#0e5e6f">
 <title>Audit Tracker — ทะเบียนงบสอบบัญชี</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=Kanit:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{
-  --navy:#0f3d5c; --navy2:#155a85; --teal:#0e9f8a; --bg:#f2f5f8; --card:#ffffff;
-  --ink:#1c2b36; --muted:#6b7d8a; --line:#e3eaf0;
-  --green:#0e9f6e; --red:#e02424; --amber:#c27803; --blue:#1a56db;
-  --radius:14px; --shadow:0 1px 3px rgba(16,42,67,.08),0 4px 14px rgba(16,42,67,.06);
+  /* TPN Design (Claude Design): teal-deep + aqua, paper/tint, ink neutrals */
+  --navy:#0e5e6f; --navy2:#1a8a9a; --teal:#1a8a9a; --bg:#eef7f8; --card:#ffffff;
+  --ink:#24323a; --muted:#6c7a82; --line:#dbe5e8;
+  --green:#0e9f6e; --red:#e02424; --amber:#b4501b; --blue:#1a8a9a;
+  --font-display:Kanit,'IBM Plex Sans Thai',system-ui,sans-serif;
+  --radius:14px; --shadow:0 1px 3px rgba(14,94,111,.08),0 4px 14px rgba(14,94,111,.07);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
-body{font-family:'Noto Sans Thai',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;padding-bottom:76px}
+body{font-family:'IBM Plex Sans Thai','Noto Sans Thai',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;padding-bottom:76px}
 button{font-family:inherit;cursor:pointer}
 input,select,textarea{font-family:inherit;font-size:15px}
 
 /* ===== header ===== */
 header{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;padding:14px 16px 12px;position:sticky;top:0;z-index:50;box-shadow:var(--shadow)}
 .hrow{display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:1100px;margin:0 auto}
-.htitle{font-weight:800;font-size:18px;line-height:1.2}
+.htitle{font-family:var(--font-display);font-weight:700;font-size:18px;line-height:1.2;letter-spacing:.01em}
 .htitle small{display:block;font-weight:400;font-size:11.5px;opacity:.75}
 #yearSel{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:10px;padding:7px 10px;font-weight:700;font-size:15px}
 #yearSel option{color:var(--ink)}
@@ -40,7 +42,7 @@ nav button.active .ico{transform:scale(1.12)}
 main{max-width:1100px;margin:0 auto;padding:14px 12px 20px}
 .page{display:none}
 .page.show{display:block}
-h2{font-size:16px;font-weight:800;margin:18px 2px 10px;color:var(--navy)}
+h2{font-family:var(--font-display);font-size:16px;font-weight:600;margin:18px 2px 10px;color:var(--navy)}
 h2:first-child{margin-top:2px}
 
 /* ===== cards / KPI ===== */
@@ -48,7 +50,7 @@ h2:first-child{margin-top:2px}
 @media(min-width:760px){.kpis{grid-template-columns:repeat(4,1fr)}}
 .kpi{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 14px}
 .kpi .lb{font-size:12px;color:var(--muted);font-weight:600}
-.kpi .v{font-size:21px;font-weight:800;margin-top:2px;line-height:1.15}
+.kpi .v{font-family:var(--font-display);font-size:21px;font-weight:600;margin-top:2px;line-height:1.15}
 .kpi .sub{font-size:11.5px;color:var(--muted);margin-top:2px}
 .kpi.gd .v{color:var(--green)} .kpi.rd .v{color:var(--red)} .kpi.am .v{color:var(--amber)} .kpi.bl .v{color:var(--blue)}
 
@@ -677,7 +679,7 @@ function renderDash(){
   mkChart('chMonth',{type:'bar',data:{labels:THM,datasets:[
     {label:'ลงชื่อแล้ว',data:sM,backgroundColor:'#0e9f8a',borderRadius:5},
     {label:'งานเข้า (แจ้ง)',data:nM,backgroundColor:'#c3d5e2',borderRadius:5}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{family:'Noto Sans Thai'}}}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{family:'IBM Plex Sans Thai'}}}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
 
   /* paid-by-month chart */
   const pm=Array(13).fill(0),pn=Array(13).fill(0);
@@ -689,7 +691,7 @@ function renderDash(){
   mkChart('chPaidMonth',{type:'bar',data:{labels:[...THM,'ไม่ระบุวัน'],datasets:[
     {label:'รับสุทธิ',data:pm.map(v=>Math.round(v)),backgroundColor:'#155a85',borderRadius:5},
     {label:'สุทธิของเรา (หักผู้ช่วย/ส่วนแบ่ง)',data:pn.map(v=>Math.round(v)),backgroundColor:'#0e9f8a',borderRadius:5}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{family:'Noto Sans Thai'}}},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{family:'IBM Plex Sans Thai'}}},
       tooltip:{callbacks:{label:c=>c.dataset.label+': ฿'+c.parsed.y.toLocaleString('th-TH')}}},
       scales:{y:{beginAtZero:true,ticks:{callback:v=>(v/1000)+'k'}}}}});
   /* ตารางรับสุทธิ/สุทธิของเรา รายเดือน (ดูตัวเลขง่ายๆ) */
@@ -706,7 +708,7 @@ function renderDash(){
   const byA={};rs.forEach(r=>{const a=r.auditor||'Poom';byA[a]=(byA[a]||0)+1;});
   const aKeys=Object.keys(byA).sort((a,b)=>byA[b]-byA[a]);
   mkChart('chAuditor',{type:'doughnut',data:{labels:aKeys.map(k=>`${k} (${byA[k]})`),datasets:[{data:aKeys.map(k=>byA[k]),backgroundColor:['#155a85','#0e9f8a','#c27803','#8b5cf6','#e02424','#64748b']}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{family:'Noto Sans Thai'}}}}}});
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{family:'IBM Plex Sans Thai'}}}}}});
 
   /* money chart */
   const g={'ลงชื่อ+รับเงินแล้ว':0,'ลงชื่อแล้ว ค้างเงิน':0,'รับเงินแล้ว ยังไม่ลงชื่อ':0,'รอทั้งคู่':0};
@@ -717,7 +719,7 @@ function renderDash(){
     else g['รอทั้งคู่']++;
   });
   mkChart('chMoney',{type:'doughnut',data:{labels:Object.keys(g).map(k=>`${k} (${g[k]})`),datasets:[{data:Object.values(g),backgroundColor:['#0e9f6e','#e02424','#1a56db','#9ca3af']}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{family:'Noto Sans Thai'}}}}}});
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{family:'IBM Plex Sans Thai'}}}}}});
 
   /* doc chips (among signed) — กดเพื่อกางรายละเอียดราย Contact */
   const dc=document.getElementById('docChips');
