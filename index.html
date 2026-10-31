@@ -209,6 +209,8 @@ th.st:hover{color:#bfe6e8}
 nav button .ico{font-size:0;height:23px}
 nav button .ico svg{width:23px;height:23px;vertical-align:middle}
 .ico:empty{display:none}
+.dwrap .dcal{display:inline-flex;align-items:center;justify-content:center;color:var(--muted)}
+.acts button.a-del{display:inline-flex;align-items:center;justify-content:center}
 #syncDot{width:7px;height:7px;border-radius:50%;background:transparent}
 #syncBtn[data-s=ok] #syncDot{background:#5cc4c8}
 #syncBtn[data-s=err] #syncDot{background:#f2a072}
@@ -383,11 +385,11 @@ nav button .ico svg{width:23px;height:23px;vertical-align:middle}
       <div><label>Auditor (ผู้ลงชื่อ)</label><input id="f_auditor" list="dlAuditor" placeholder="Poom"></div>
       <div><label>Contact ลูกค้า</label><input id="f_contact" list="dlContact"></div>
       <div><label>เดือน (รอบงาน)</label><select id="f_month"></select></div>
-      <div><label>งบปีสิ้นสุด</label><div class="dwrap"><input id="f_fyEnd" type="text" inputmode="numeric" placeholder="วว/ดด/ปปปป" autocomplete="off"><button type="button" class="dcal" onclick="openPick('f_fyEnd')" tabindex="-1"></button><input id="f_fyEnd_p" type="date" class="dhidden" tabindex="-1"></div></div>
+      <div><label>งบปีสิ้นสุด</label><div class="dwrap"><input id="f_fyEnd" type="text" inputmode="numeric" placeholder="วว/ดด/ปปปป" autocomplete="off"><button type="button" class="dcal" onclick="openPick('f_fyEnd')" tabindex="-1"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button><input id="f_fyEnd_p" type="date" class="dhidden" tabindex="-1"></div></div>
     </div>
     <div class="frow">
-      <div><label>วันที่แจ้ง</label><div class="dwrap"><input id="f_dateNotified" type="text" inputmode="numeric" placeholder="วว/ดด/ปปปป" autocomplete="off"><button type="button" class="dcal" onclick="openPick('f_dateNotified')" tabindex="-1"></button><input id="f_dateNotified_p" type="date" class="dhidden" tabindex="-1"></div></div>
-      <div><label>วันที่ลงรายชื่อ</label><div class="dwrap"><input id="f_dateSigned" type="text" inputmode="numeric" placeholder="วว/ดด/ปปปป" autocomplete="off"><button type="button" class="dcal" onclick="openPick('f_dateSigned')" tabindex="-1"></button><input id="f_dateSigned_p" type="date" class="dhidden" tabindex="-1"></div></div>
+      <div><label>วันที่แจ้ง</label><div class="dwrap"><input id="f_dateNotified" type="text" inputmode="numeric" placeholder="วว/ดด/ปปปป" autocomplete="off"><button type="button" class="dcal" onclick="openPick('f_dateNotified')" tabindex="-1"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button><input id="f_dateNotified_p" type="date" class="dhidden" tabindex="-1"></div></div>
+      <div><label>วันที่ลงรายชื่อ</label><div class="dwrap"><input id="f_dateSigned" type="text" inputmode="numeric" placeholder="วว/ดด/ปปปป" autocomplete="off"><button type="button" class="dcal" onclick="openPick('f_dateSigned')" tabindex="-1"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button><input id="f_dateSigned_p" type="date" class="dhidden" tabindex="-1"></div></div>
       <div><label>ความเห็นผู้สอบ</label><select id="f_opinion">
         <option value="">ไม่มีเงื่อนไข (ปกติ)</option><option>มีเงื่อนไข</option><option>ไม่แสดงความเห็น</option><option>งบไม่ถูกต้อง</option>
       </select></div>
@@ -430,7 +432,7 @@ nav button .ico svg{width:23px;height:23px;vertical-align:middle}
     </div>
     <div class="frow half">
       <div class="ck"><input type="checkbox" id="f_paid"><span>รับเงินแล้ว</span></div>
-      <div><label>วันที่รับเงิน</label><div class="dwrap"><input id="f_datePaid" type="text" inputmode="numeric" placeholder="วว/ดด/ปปปป" autocomplete="off"><button type="button" class="dcal" onclick="openPick('f_datePaid')" tabindex="-1"></button><input id="f_datePaid_p" type="date" class="dhidden" tabindex="-1"></div></div>
+      <div><label>วันที่รับเงิน</label><div class="dwrap"><input id="f_datePaid" type="text" inputmode="numeric" placeholder="วว/ดด/ปปปป" autocomplete="off"><button type="button" class="dcal" onclick="openPick('f_datePaid')" tabindex="-1"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></button><input id="f_datePaid_p" type="date" class="dhidden" tabindex="-1"></div></div>
     </div>
 
     <div class="fsec">ติดตามเอกสาร <span style="font-weight:400;color:var(--muted)">(ค้าง / ได้แล้ว / ไม่ต้องใช้)</span></div>
@@ -1136,7 +1138,7 @@ function renderList(){
         <button class="a-edit" onclick="editRec('${r.id}')">แก้ไข</button>
         <button class="a-edit" style="background:#e0f2fe;color:#075985" title="ลูกค้าจ้างต่อ — ขึ้นปีงบใหม่ (Rollforward) รีเซ็ตวันที่/เงิน" onclick="dupNextYear('${r.id}')">ต่อปีหน้า</button>
         <button class="a-edit" style="background:#fef3c7;color:#92400e" title="ส่งล่าช้า ลงนามปีหน้า — คัดลอกทั้งหมด ปีงบเดิม" onclick="dupSameYear('${r.id}')">ยกไปปีหน้า</button>
-        <button class="a-del" onclick="delRec('${r.id}')"></button>
+        <button class="a-del" onclick="delRec('${r.id}')" title="ลบ"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m4 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
       </div>`}</div>`;
   }).join('')||'<div class="card" style="text-align:center;color:var(--muted)">ไม่พบรายการ</div>';
   const more=document.getElementById('moreBtn');
@@ -1626,7 +1628,7 @@ function renderLists(){
         return `<div style="display:flex;align-items:center;gap:8px;background:#f6f9fb;border-radius:9px;padding:7px 11px">
           <span style="flex:1;font-weight:600;font-size:13.5px">${esc(n)} <span style="color:var(--muted);font-weight:400">· ${c} งบ</span></span>
           <button onclick="renameName('${cat}',${i})" style="border:none;background:#e1effe;color:#1e429f;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700">แก้ไข/รวม</button>
-          <button onclick="delName('${cat}',${i})" style="border:none;background:#fde8e8;color:#c81e1e;border-radius:8px;padding:5px 9px;font-size:12px;font-weight:700"></button>
+          <button onclick="delName('${cat}',${i})" title="ลบ" style="border:none;background:#fde8e8;color:#c81e1e;border-radius:4px;padding:5px 8px;font-size:12px;font-weight:700;display:inline-flex;align-items:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m4 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
         </div>`;}).join('')||'<span style="color:var(--muted);font-size:13px">ยังไม่มีรายชื่อ</span>'}</div>
       <div style="display:flex;gap:8px">
         <input id="add_${cat}" placeholder="เพิ่มชื่อใหม่..." style="flex:1;padding:8px 11px;border:1.5px solid var(--line);border-radius:10px"
