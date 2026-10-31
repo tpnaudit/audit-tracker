@@ -215,6 +215,37 @@ nav button .ico svg{width:23px;height:23px;vertical-align:middle}
 #syncBtn[data-s=ok] #syncDot{background:#5cc4c8}
 #syncBtn[data-s=err] #syncDot{background:#f2a072}
 #syncBtn[data-s=busy] #syncDot{background:#bfe6e8;opacity:.55}
+
+/* ===================== Premium polish (productivity-app feel) ===================== */
+*{-webkit-tap-highlight-color:transparent}
+body{letter-spacing:.002em}
+main{padding:18px 14px 30px}
+.card,.kpi,.item,.dbtn,.chip,.btn,.acts button,nav button,.dcal,#moreBtn,.a-edit,.a-sign,.a-paid{transition:border-color .16s ease,background-color .16s ease,color .16s ease,transform .12s ease,filter .16s ease}
+/* KPI: airier, bigger figure, quiet label */
+.kpis{gap:12px}
+.kpi{padding:16px 17px}
+.kpi .lb{font-size:11px;font-weight:600;letter-spacing:.03em}
+.kpi .v{font-size:25px;line-height:1.08;margin-top:7px}
+.kpi .sub{margin-top:6px;font-size:11px}
+.kpi:hover{border-top-color:var(--navy)}
+/* cards roomier */
+.card{padding:16px 17px}
+/* section headings: more breathing, clearer */
+h2{font-size:18px;margin:26px 2px 13px;font-weight:600}
+h2:first-child{margin-top:4px}
+/* list items: airier + hover */
+.item{padding:14px 16px}
+.item:hover{border-color:#c6dade;border-top-color:var(--navy)}
+.item .nm{font-size:15px;letter-spacing:.002em}
+/* buttons / interactions */
+.btn-p:hover{filter:brightness(1.08)}
+.btn-g:hover,#moreBtn:hover{background:var(--bg)}
+.acts button:hover{filter:brightness(.96)}
+.dbtn:hover{border-color:#c6dade;border-top-color:var(--navy)}
+.chip:hover{border-color:#bcd4d8}
+nav button:hover{color:var(--navy)}
+/* focus ring */
+.frm input:focus,.frm select:focus,.frm textarea:focus,.fbar input:focus,.fbar select:focus,.pivbar select:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(26,138,154,.13)}
 </style>
 </head>
 <body>
@@ -658,7 +689,7 @@ function renderConc(rs){
   const byC={};rs.forEach(r=>{const c=(r.contact||'').trim()||'(ไม่ระบุ)';byC[c]=byC[c]||{n:0,fee:0};byC[c].n++;byC[c].fee+=r.fee||0;});
   const arr=Object.entries(byC).map(([c,v])=>({c,...v})).sort((a,b)=>b.fee-a.fee);
   const tot=arr.reduce((s,x)=>s+x.fee,0)||1,topShare=Math.round(arr[0].fee/tot*100);
-  const bar=x=>{const p=Math.round(x.fee/tot*100);return `<div style="margin-bottom:7px"><div style="display:flex;justify-content:space-between;font-size:12.5px;gap:8px"><span style="font-weight:600;min-width:0">${esc(x.c)} <span style="color:var(--muted)">(${fmtN(x.n)} งบ)</span></span><span style="font-weight:800;white-space:nowrap">${p}% · ${fmtB(x.fee)}</span></div><div style="height:7px;background:#eceff3;border-radius:5px;margin-top:3px;overflow:hidden"><div style="height:100%;width:${p}%;background:${p>=40?'#c81e1e':'var(--teal)'}"></div></div></div>`;};
+  const bar=x=>{const p=Math.round(x.fee/tot*100);return `<div style="margin-bottom:7px"><div style="display:flex;justify-content:space-between;font-size:12.5px;gap:8px"><span style="font-weight:600;min-width:0">${esc(x.c)} <span style="color:var(--muted)">(${fmtN(x.n)} งบ)</span></span><span style="font-weight:800;white-space:nowrap">${p}% · ${fmtB(x.fee)}</span></div><div style="height:7px;background:var(--bg);border-radius:4px;margin-top:4px;overflow:hidden"><div style="height:100%;width:${p}%;background:${p>=40?'var(--navy)':'var(--teal)'}"></div></div></div>`;};
   box.innerHTML=`<div class="card"><h2 style="margin:0 0 5px">กระจุกตัวลูกค้า (ปี ${curYear})</h2>
     <div style="font-size:12px;color:${topShare>=40?'#c81e1e':'var(--muted)'};margin-bottom:9px">${topShare>=40?'':''}พึ่ง “${esc(arr[0].c)}” ${topShare}% ของค่าสอบทั้งปี${topShare>=40?' — เสี่ยงกระจุกตัว ควรกระจายฐานลูกค้า':''}</div>
     ${arr.slice(0,5).map(bar).join('')}</div>`;
