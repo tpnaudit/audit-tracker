@@ -246,6 +246,19 @@ h2:first-child{margin-top:4px}
 nav button:hover{color:var(--navy)}
 /* focus ring */
 .frm input:focus,.frm select:focus,.frm textarea:focus,.fbar input:focus,.fbar select:focus,.pivbar select:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(26,138,154,.13)}
+/* Dashboard hero band */
+.dhero{position:relative;overflow:hidden;background:linear-gradient(120deg,#0a4855 0%,var(--navy) 55%,#12707f 100%);color:#fff;padding:22px 22px 24px;margin-bottom:14px}
+.dhero-ribbon{position:absolute;right:-24px;top:-18px;width:300px;height:180px;opacity:.5;pointer-events:none}
+.dhero-eye{font-family:var(--font-display);font-size:11.5px;letter-spacing:.06em;opacity:.82;margin-bottom:16px;position:relative}
+.dhero-grid{display:flex;flex-wrap:wrap;gap:18px 34px;align-items:flex-end;justify-content:space-between;position:relative}
+.dhero-lb{font-size:12.5px;opacity:.88;font-weight:500}
+.dhero-big{font-family:var(--font-display);font-size:42px;font-weight:600;line-height:1.02;margin:5px 0 6px}
+.dhero-sub{font-size:12.5px;opacity:.85}
+.dhero-stats{display:flex;gap:28px}
+.dhero-stats>div{display:flex;flex-direction:column}
+.dhero-stats b{font-family:var(--font-display);font-size:21px;font-weight:600;line-height:1.1}
+.dhero-stats span{font-size:11px;opacity:.82;margin-top:2px}
+@media(max-width:560px){.dhero-big{font-size:34px}.dhero-stats{gap:20px}.dhero-grid{gap:16px 24px}}
 </style>
 </head>
 <body>
@@ -270,6 +283,7 @@ nav button:hover{color:var(--navy)}
       <option value="">Auditor ทั้งหมด</option>
     </select>
   </div>
+  <div id="dashHero"></div>
   <div class="kpis" id="kpis"></div>
 
   <div id="wrongSignBox"></div>
@@ -725,6 +739,23 @@ function renderDash(){
   const netTot=rs.reduce((s,r)=>s+net(r),0);
   const inTFAC=rs.filter(r=>parseDateBE(r.dateNotified));   // เข้าระบบ TFAC = มีวันแจ้ง
   const inTFACSigned=inTFAC.filter(isSigned);
+  /* hero band — โมเมนต์สรุป */
+  const paidPoom=rs.filter(r=>r.paid).reduce((s,r)=>s+poomNet(r),0);
+  document.getElementById('dashHero').innerHTML=`<div class="dhero">
+    <svg class="dhero-ribbon" viewBox="0 0 560 260" aria-hidden="true"><g fill="none" stroke-width="46" stroke-linecap="butt"><line x1="70" y1="-30" x2="300" y2="120" stroke="#2a7f8d"/><line x1="300" y1="120" x2="175" y2="245" stroke="#3a9aa6"/><line x1="175" y1="245" x2="480" y2="150" stroke="#5cc4c8"/></g></svg>
+    <div class="dhero-eye">ภาพรวม · ปี ${curYear}${sel.value?' · '+esc(sel.value):''}</div>
+    <div class="dhero-grid">
+      <div class="dhero-main">
+        <div class="dhero-lb">สุทธิของเรา (ทั้งปี)</div>
+        <div class="dhero-big">${fmtB(poomTot)}</div>
+        <div class="dhero-sub">รับแล้ว ${fmtB(paidPoom)} · ค้างรับ ${fmtB(poomTot-paidPoom)}</div>
+      </div>
+      <div class="dhero-stats">
+        <div><b>${fmtN(rs.length)}</b><span>งบทั้งหมด</span></div>
+        <div><b>${fmtB(totFee)}</b><span>ค่าสอบรวม</span></div>
+        <div><b>${pct}%</b><span>ลงชื่อแล้ว</span></div>
+      </div>
+    </div></div>`;
   document.getElementById('kpis').innerHTML=`
     <div class="kpi"><div class="lb">งบทั้งหมด</div><div class="v">${fmtN(rs.length)}</div><div class="sub">ปี ${curYear}</div></div>
     <div class="kpi gd"><div class="lb">ลงชื่อแล้ว</div><div class="v">${fmtN(signed.length)}</div><div class="sub">${pct}% ของทั้งหมด</div></div>
