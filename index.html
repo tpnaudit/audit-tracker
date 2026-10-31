@@ -424,7 +424,7 @@ nav button:hover{color:var(--navy)}
   <div class="frm">
     <input type="hidden" id="f_id">
     <div class="frow half">
-      <div><label>ประเภทงาน *</label><select id="f_jobType" onchange="applyJobType()"><option value="audit">สอบบัญชี</option><option value="healthcheck">Health Check (ให้ข้อสังเกตงบ)</option><option value="broker">นายหน้าสอบ (รีวิวงานผู้สอบอื่น)</option></select></div>
+      <div><label>ประเภทงาน *</label><select id="f_jobType" onchange="applyJobType()"><option value="audit">สอบบัญชี</option><option value="healthcheck">Health Check (ให้ข้อสังเกตงบ)</option><option value="bookkeeping">ทำบัญชี</option><option value="consult">ให้คำปรึกษา</option><option value="broker">นายหน้าสอบ (รีวิวงานผู้สอบอื่น)</option></select></div>
       <div style="display:flex;align-items:flex-end"><span id="jtHint" style="font-size:11.5px;color:var(--muted);line-height:1.45"></span></div>
     </div>
     <div class="frow one"><div><label id="lbCompany">ชื่อกิจการ *</label><input id="f_company" placeholder="บจ. ..."></div></div>
@@ -586,8 +586,8 @@ function mergeListsFromRecords(){
 const THM=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const DOCS={hard:'ส่ง Hard',elRep:'EL & Rep',confirm:'Confirm',whtCert:'ใบหักฯ',shLetter:'ยืนยัน ผถห.'};
 /* ประเภทงาน — สอบบัญชี เป็น default 90% · Health Check/นายหน้า ไม่มีลงนาม/TFAC/จองชื่อ แต่ยังหัก WHT 3% */
-const JT={audit:'สอบบัญชี',healthcheck:'Health Check',broker:'นายหน้าสอบ'};
-const JTBADGE={healthcheck:'b-blue',broker:'b-amber'};
+const JT={audit:'สอบบัญชี',healthcheck:'Health Check',bookkeeping:'ทำบัญชี',consult:'ให้คำปรึกษา',broker:'นายหน้าสอบ'};
+const JTBADGE={healthcheck:'b-blue',bookkeeping:'b-green',consult:'b-gray',broker:'b-amber'};
 const jt=r=>r.jobType||'audit';
 const isAudit=r=>jt(r)==='audit';
 const fmtB=n=>'฿'+(Math.round(n)).toLocaleString('th-TH');
@@ -1323,9 +1323,10 @@ function autoWht(){const base=(+F('f_fee').value||0);const on=(F('f_jobType').va
 function applyJobType(){
   const t=F('f_jobType').value,aud=(t==='audit');
   document.querySelectorAll('#pg-form .audit-only').forEach(el=>el.style.display=aud?'':'none');
-  const hints={audit:'',healthcheck:'ให้ข้อสังเกตงบเบื้องต้น — ไม่ลงนาม/ไม่เข้า TFAC · ยังหัก ณ ที่จ่าย 3%',broker:'เราช่วยรีวิวงาน ผู้สอบอื่นเป็นผู้ลงนาม — ใส่ชื่อผู้สอบที่ลงนามจริงในช่อง Auditor · หัก 3%'};
+  const hints={audit:'',healthcheck:'ให้ข้อสังเกตงบเบื้องต้น ไม่ลงนาม/ไม่เข้า TFAC · ยังหัก ณ ที่จ่าย 3%',bookkeeping:'งานทำบัญชี (รายเดือน/รายปี) ไม่ลงนาม/ไม่เข้า TFAC · หัก ณ ที่จ่าย 3%',consult:'งานให้คำปรึกษา ไม่ลงนาม/ไม่เข้า TFAC · หัก ณ ที่จ่าย 3%',broker:'เราช่วยรีวิวงาน ผู้สอบอื่นเป็นผู้ลงนาม · ใส่ชื่อผู้สอบที่ลงนามจริงในช่อง Auditor · หัก 3%'};
   document.getElementById('jtHint').textContent=hints[t]||'';
-  document.getElementById('feeSec').textContent=aud?'ค่าสอบบัญชี':(t==='broker'?'ค่านายหน้า (ส่วนที่เราได้)':'ค่าบริการ');
+  const feeLb={audit:'ค่าสอบบัญชี',healthcheck:'ค่าบริการ',bookkeeping:'ค่าทำบัญชี',consult:'ค่าที่ปรึกษา',broker:'ค่านายหน้า (ส่วนที่เราได้)'};
+  document.getElementById('feeSec').textContent=feeLb[t]||'ค่าบริการ';
   document.getElementById('lbDateNotified').textContent=aud?'วันที่แจ้ง':'วันที่รับงาน';
   document.getElementById('lbCompany').textContent=aud?'ชื่อกิจการ *':'ชื่อลูกค้า/กิจการ *';
   if(!aud){F('f_inSystem').checked=false;F('f_signedFlag').checked=false;setDF('f_dateSigned','');F('splitRow').style.display='none';}
