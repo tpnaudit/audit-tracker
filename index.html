@@ -205,16 +205,24 @@ th.st:hover{color:#bfe6e8}
 .ccard{border-radius:0;border:1px solid var(--line);border-top:3px solid var(--teal);box-shadow:none}
 .cchead{background:var(--navy)}
 .ubox{border-radius:4px}
+/* icons (SVG, no emoji) */
+nav button .ico{font-size:0;height:23px}
+nav button .ico svg{width:23px;height:23px;vertical-align:middle}
+.ico:empty{display:none}
+#syncDot{width:7px;height:7px;border-radius:50%;background:transparent}
+#syncBtn[data-s=ok] #syncDot{background:#5cc4c8}
+#syncBtn[data-s=err] #syncDot{background:#f2a072}
+#syncBtn[data-s=busy] #syncDot{background:#bfe6e8;opacity:.55}
 </style>
 </head>
 <body>
 
 <header>
   <div class="hrow">
-    <div class="htitle">📋 Audit Tracker<small>ทะเบียนงบสอบบัญชี — TPN Audit</small></div>
+    <div class="htitle">Audit Tracker<small>ทะเบียนงบสอบบัญชี — TPN Audit</small></div>
     <div style="display:flex;gap:8px;align-items:center">
-      <button id="syncBtn" onclick="syncTap()" title="Sync ข้ามเครื่อง"
-        style="background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);border-radius:10px;padding:6px 9px;font-size:16px;line-height:1;color:#fff">☁️</button>
+      <button id="syncBtn" data-s="" onclick="syncTap()" title="Sync ข้ามเครื่อง"
+        style="background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);border-radius:6px;padding:6px 9px;line-height:1;color:#fff;display:inline-flex;align-items:center;gap:5px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg><i id="syncDot"></i></button>
       <select id="yearSel"></select>
     </div>
   </div>
@@ -226,7 +234,7 @@ th.st:hover{color:#bfe6e8}
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
     <span style="font-size:13px;font-weight:700;color:var(--muted);white-space:nowrap">แสดงของ:</span>
     <select id="dashAuditor" style="flex:1;max-width:260px;padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;background:#fff;font-weight:700;font-size:14px">
-      <option value="">👥 Auditor ทั้งหมด</option>
+      <option value="">Auditor ทั้งหมด</option>
     </select>
   </div>
   <div class="kpis" id="kpis"></div>
@@ -260,7 +268,7 @@ th.st:hover{color:#bfe6e8}
 
   <h2>ยอดตามลูกค้า (กิจการ)</h2>
   <div class="card">
-    <input type="search" id="custSearch" placeholder="🔍 ค้นหากิจการ..." oninput="custLimit=15;renderCust()"
+    <input type="search" id="custSearch" placeholder="ค้นหากิจการ..." oninput="custLimit=15;renderCust()"
       style="width:100%;padding:9px 12px;border:1.5px solid var(--line);border-radius:10px;margin-bottom:10px">
     <div class="tblwrap"><table id="tbCust"></table></div>
     <button id="custMore" onclick="custLimit+=30;renderCust()" style="display:none;width:100%;margin-top:10px;padding:9px;border:none;border-radius:10px;background:#e3eaf0;font-weight:700;color:var(--navy)">แสดงเพิ่มเติม</button>
@@ -269,7 +277,7 @@ th.st:hover{color:#bfe6e8}
   <h2>ภาษี — งบที่เข้าระบบ</h2>
   <div class="card tblwrap"><table id="tbTax"></table></div>
 
-  <h2>🧮 Pivot จัดเอง</h2>
+  <h2>Pivot จัดเอง</h2>
   <div class="card">
     <div class="pivbar">
       <div><label>แถวตาม</label><select id="pvRow"></select></div>
@@ -281,20 +289,20 @@ th.st:hover{color:#bfe6e8}
     <div class="chips" id="pvVals" style="margin:4px 0 12px"></div>
     <div class="lsum" id="pvHint" style="margin:0 0 8px"></div>
     <div class="tblwrap"><table id="tbPivot"></table></div>
-    <button onclick="exportPivot()" style="margin-top:12px;border:none;border-radius:9px;padding:8px 14px;font-size:12.5px;font-weight:700;background:var(--navy2);color:#fff">📤 Export Pivot เป็น Excel</button>
+    <button onclick="exportPivot()" style="margin-top:12px;border:none;border-radius:9px;padding:8px 14px;font-size:12.5px;font-weight:700;background:var(--navy2);color:#fff">Export Pivot เป็น Excel</button>
   </div>
 </section>
 
 <!-- ============ LIST ============ -->
 <section class="page" id="pg-list">
   <div class="fbar">
-    <input type="search" id="fSearch" placeholder="🔍 ค้นหาชื่อกิจการ / เลขนิติบุคคล">
+    <input type="search" id="fSearch" placeholder="ค้นหาชื่อกิจการ / เลขนิติบุคคล">
     <select id="fStatus">
       <option value="">สถานะ: ทั้งหมด</option>
-      <option value="unsigned">⏳ รอลงชื่อ</option>
-      <option value="signed">✍️ ลงชื่อแล้ว</option>
-      <option value="unpaid">💸 ค้างรับเงิน</option>
-      <option value="paid">✅ รับเงินแล้ว</option>
+      <option value="unsigned">รอลงชื่อ</option>
+      <option value="signed">ลงชื่อแล้ว</option>
+      <option value="unpaid">ค้างรับเงิน</option>
+      <option value="paid">รับเงินแล้ว</option>
       <option value="signed_unpaid">ลงชื่อแล้ว-ค้างเงิน</option>
     </select>
     <select id="fAuditor"><option value="">Auditor: ทั้งหมด</option></select>
@@ -312,8 +320,8 @@ th.st:hover{color:#bfe6e8}
   <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 4px 10px">
     <div class="lsum" id="listSum" style="margin:0"></div>
     <div style="display:flex;gap:6px;flex-shrink:0">
-      <button id="selModeBtn" onclick="toggleSelMode()" style="border:none;border-radius:9px;padding:8px 12px;font-size:12.5px;font-weight:700;background:#eceff3;color:var(--navy);white-space:nowrap">☑️ เลือก</button>
-      <button onclick="exportListExcel()" style="border:none;border-radius:9px;padding:8px 12px;font-size:12.5px;font-weight:700;background:var(--navy2);color:#fff;white-space:nowrap">📤 Export</button>
+      <button id="selModeBtn" onclick="toggleSelMode()" style="border:none;border-radius:9px;padding:8px 12px;font-size:12.5px;font-weight:700;background:#eceff3;color:var(--navy);white-space:nowrap">เลือก</button>
+      <button onclick="exportListExcel()" style="border:none;border-radius:9px;padding:8px 12px;font-size:12.5px;font-weight:700;background:var(--navy2);color:#fff;white-space:nowrap">Export</button>
     </div>
   </div>
   <div id="bulkBar" style="display:none;position:sticky;top:0;z-index:40;background:var(--navy);color:#fff;border-radius:12px;padding:11px 13px;margin-bottom:10px;box-shadow:0 4px 14px rgba(16,42,67,.25)">
@@ -325,17 +333,17 @@ th.st:hover{color:#bfe6e8}
     </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px;align-items:center">
       <span style="display:inline-flex;gap:5px;align-items:center;background:rgba(255,255,255,.14);border-radius:8px;padding:3px 8px">
-        <span style="font-size:12px;font-weight:700">📅 วันที่</span>
+        <span style="font-size:12px;font-weight:700">วันที่</span>
         <input id="bulkDate" type="text" inputmode="numeric" placeholder="วันนี้" style="width:104px;border:none;border-radius:6px;padding:5px 7px;font-size:12.5px;font-weight:600">
       </span>
-      <button onclick="bulkSign()" style="border:none;border-radius:8px;padding:7px 11px;font-size:12.5px;font-weight:700;background:#def7ec;color:#046c4e">✍️ ลงชื่อ</button>
-      <button onclick="bulkPaid()" style="border:none;border-radius:8px;padding:7px 11px;font-size:12.5px;font-weight:700;background:#def7ec;color:#046c4e">💰 รับเงิน</button>
+      <button onclick="bulkSign()" style="border:none;border-radius:8px;padding:7px 11px;font-size:12.5px;font-weight:700;background:#def7ec;color:#046c4e">ลงชื่อ</button>
+      <button onclick="bulkPaid()" style="border:none;border-radius:8px;padding:7px 11px;font-size:12.5px;font-weight:700;background:#def7ec;color:#046c4e">รับเงิน</button>
       <span style="display:inline-flex;gap:4px;align-items:center;background:rgba(255,255,255,.12);border-radius:8px;padding:3px 5px">
-        <select id="bulkDocK" style="border:none;border-radius:6px;padding:5px 6px;font-size:12px;font-weight:600"><option value="">📄 เอกสาร...</option></select>
+        <select id="bulkDocK" style="border:none;border-radius:6px;padding:5px 6px;font-size:12px;font-weight:600"><option value="">เอกสาร...</option></select>
         <select id="bulkDocV" style="border:none;border-radius:6px;padding:5px 6px;font-size:12px;font-weight:600"><option value="yes">✓ ได้รับแล้ว</option><option value="no">✗ ค้าง</option><option value="na">— ไม่ต้องใช้</option></select>
         <button onclick="bulkDoc()" style="border:none;border-radius:6px;padding:5px 10px;font-size:12px;font-weight:700;background:#fff;color:var(--navy)">ทำ</button>
       </span>
-      <button onclick="bulkDelete()" style="border:none;border-radius:8px;padding:7px 11px;font-size:12.5px;font-weight:700;background:#fde8e8;color:#c81e1e">🗑 ลบ</button>
+      <button onclick="bulkDelete()" style="border:none;border-radius:8px;padding:7px 11px;font-size:12.5px;font-weight:700;background:#fde8e8;color:#c81e1e">ลบ</button>
     </div>
   </div>
   <div id="listBox"></div>
@@ -356,12 +364,12 @@ th.st:hover{color:#bfe6e8}
 <section class="page" id="pg-form">
   <h2 id="formTitle">เพิ่มงบใหม่</h2>
   <div class="frm" style="margin-bottom:12px;background:#eef9f7;border:1.5px dashed var(--teal)">
-    <label>📎 งบต่อเนื่องจากปีก่อน — เลือก Contact แล้วเลือกกิจการ ระบบจะเติมข้อมูลเดิมและเลื่อนรอบเป็นปีถัดไปให้</label>
+    <label>งบต่อเนื่องจากปีก่อน — เลือก Contact แล้วเลือกกิจการ ระบบจะเติมข้อมูลเดิมและเลื่อนรอบเป็นปีถัดไปให้</label>
     <div class="frow half" style="margin-bottom:8px">
       <div><select id="prevContact" onchange="fillPrevCompanies()"><option value="">— เลือก Contact —</option></select></div>
       <div><select id="prevCompany" onchange="prefillFromSel()"><option value="">— เลือกกิจการ —</option></select></div>
     </div>
-    <input id="prevPick" list="dlPrev" placeholder="🔍 หรือพิมพ์ค้นหาชื่อกิจการตรงๆ..." autocomplete="off">
+    <input id="prevPick" list="dlPrev" placeholder="หรือพิมพ์ค้นหาชื่อกิจการตรงๆ..." autocomplete="off">
     <datalist id="dlPrev"></datalist>
   </div>
   <div class="frm">
@@ -375,11 +383,11 @@ th.st:hover{color:#bfe6e8}
       <div><label>Auditor (ผู้ลงชื่อ)</label><input id="f_auditor" list="dlAuditor" placeholder="Poom"></div>
       <div><label>Contact ลูกค้า</label><input id="f_contact" list="dlContact"></div>
       <div><label>เดือน (รอบงาน)</label><select id="f_month"></select></div>
-      <div><label>งบปีสิ้นสุด</label><div class="dwrap"><input id="f_fyEnd" type="text" inputmode="numeric" placeholder="วว/ดด/ปปปป" autocomplete="off"><button type="button" class="dcal" onclick="openPick('f_fyEnd')" tabindex="-1">📅</button><input id="f_fyEnd_p" type="date" class="dhidden" tabindex="-1"></div></div>
+      <div><label>งบปีสิ้นสุด</label><div class="dwrap"><input id="f_fyEnd" type="text" inputmode="numeric" placeholder="วว/ดด/ปปปป" autocomplete="off"><button type="button" class="dcal" onclick="openPick('f_fyEnd')" tabindex="-1"></button><input id="f_fyEnd_p" type="date" class="dhidden" tabindex="-1"></div></div>
     </div>
     <div class="frow">
-      <div><label>วันที่แจ้ง</label><div class="dwrap"><input id="f_dateNotified" type="text" inputmode="numeric" placeholder="วว/ดด/ปปปป" autocomplete="off"><button type="button" class="dcal" onclick="openPick('f_dateNotified')" tabindex="-1">📅</button><input id="f_dateNotified_p" type="date" class="dhidden" tabindex="-1"></div></div>
-      <div><label>วันที่ลงรายชื่อ</label><div class="dwrap"><input id="f_dateSigned" type="text" inputmode="numeric" placeholder="วว/ดด/ปปปป" autocomplete="off"><button type="button" class="dcal" onclick="openPick('f_dateSigned')" tabindex="-1">📅</button><input id="f_dateSigned_p" type="date" class="dhidden" tabindex="-1"></div></div>
+      <div><label>วันที่แจ้ง</label><div class="dwrap"><input id="f_dateNotified" type="text" inputmode="numeric" placeholder="วว/ดด/ปปปป" autocomplete="off"><button type="button" class="dcal" onclick="openPick('f_dateNotified')" tabindex="-1"></button><input id="f_dateNotified_p" type="date" class="dhidden" tabindex="-1"></div></div>
+      <div><label>วันที่ลงรายชื่อ</label><div class="dwrap"><input id="f_dateSigned" type="text" inputmode="numeric" placeholder="วว/ดด/ปปปป" autocomplete="off"><button type="button" class="dcal" onclick="openPick('f_dateSigned')" tabindex="-1"></button><input id="f_dateSigned_p" type="date" class="dhidden" tabindex="-1"></div></div>
       <div><label>ความเห็นผู้สอบ</label><select id="f_opinion">
         <option value="">ไม่มีเงื่อนไข (ปกติ)</option><option>มีเงื่อนไข</option><option>ไม่แสดงความเห็น</option><option>งบไม่ถูกต้อง</option>
       </select></div>
@@ -392,14 +400,14 @@ th.st:hover{color:#bfe6e8}
     </div>
     <div class="frow half">
       <div><label>ประเภทงบ *</label><select id="f_stmtType"><option value="op">งบดำเนินกิจการ</option><option value="liq">งบเลิกกิจการ</option></select></div>
-      <div style="display:flex;align-items:flex-end"><span style="font-size:11.5px;color:var(--muted);line-height:1.45">💡 “งบเลิกกิจการ” จะไม่ถูกดึงไปหน้า <b>จองชื่อ</b> ใน CRM · ระบบเดาให้จากวันสิ้นงวด (ถ้าไม่ใช่สิ้นเดือน = มักเป็นงบเลิกกิจการ)</span></div>
+      <div style="display:flex;align-items:flex-end"><span style="font-size:11.5px;color:var(--muted);line-height:1.45">“งบเลิกกิจการ” จะไม่ถูกดึงไปหน้า <b>จองชื่อ</b> ใน CRM · ระบบเดาให้จากวันสิ้นงวด (ถ้าไม่ใช่สิ้นเดือน = มักเป็นงบเลิกกิจการ)</span></div>
     </div>
     <div class="frow half">
       <div class="ck"><input type="checkbox" id="f_inSystem"><span>เข้าระบบ (ยื่นภาษี)</span></div>
       <div class="ck"><input type="checkbox" id="f_signedFlag"><span>ลงชื่อแล้ว (ไม่ระบุวันที่)</span></div>
     </div>
 
-    <div class="fsec">💰 ค่าสอบบัญชี</div>
+    <div class="fsec">ค่าสอบบัญชี</div>
     <div class="frow">
       <div><label>ราคา (บาท)</label><input id="f_fee" type="number" inputmode="decimal" step="any"></div>
       <div><label>Incentive</label><input id="f_incentive" type="number" inputmode="decimal" step="any" value="0"></div>
@@ -414,7 +422,7 @@ th.st:hover{color:#bfe6e8}
       <div><label>ค่า ref ลูกค้า (%) <span style="font-weight:400;color:var(--muted)">— % ของราคา</span></label><input id="f_commPct" type="number" inputmode="decimal" step="any" min="0" value="0"></div>
       <div><label>ค่า ref ลูกค้า (บาท)</label><input id="f_commAmt" type="number" inputmode="decimal" step="any" min="0" value="0"></div>
     </div>
-    <div style="font-size:11.5px;color:var(--muted);margin:-4px 2px 9px;line-height:1.5">💡 ค่าแนะนำลูกค้า (ref) — ปกติให้เฉพาะ<b>ปีแรก</b>ที่พาลูกค้าใหม่เข้ามาให้เราตรวจ · กรอก % จะคิดจากราคาให้ หรือพิมพ์จำนวนเองก็ได้ · หักออกจาก “สุทธิของเรา” (ต่อปีถัดไประบบรีเซ็ตให้เป็น 0)</div>
+    <div style="font-size:11.5px;color:var(--muted);margin:-4px 2px 9px;line-height:1.5">ค่าแนะนำลูกค้า (ref) — ปกติให้เฉพาะ<b>ปีแรก</b>ที่พาลูกค้าใหม่เข้ามาให้เราตรวจ · กรอก % จะคิดจากราคาให้ หรือพิมพ์จำนวนเองก็ได้ · หักออกจาก “สุทธิของเรา” (ต่อปีถัดไประบบรีเซ็ตให้เป็น 0)</div>
     <div class="netbox" id="netBox">รับสุทธิ: ฿0</div>
     <div class="frow half" id="splitRow" style="display:none">
       <div><label>ส่วนของ Poom (งบส่งต่อ)</label><input id="f_poomShare" type="number" inputmode="decimal" step="any" value="0"></div>
@@ -422,22 +430,22 @@ th.st:hover{color:#bfe6e8}
     </div>
     <div class="frow half">
       <div class="ck"><input type="checkbox" id="f_paid"><span>รับเงินแล้ว</span></div>
-      <div><label>วันที่รับเงิน</label><div class="dwrap"><input id="f_datePaid" type="text" inputmode="numeric" placeholder="วว/ดด/ปปปป" autocomplete="off"><button type="button" class="dcal" onclick="openPick('f_datePaid')" tabindex="-1">📅</button><input id="f_datePaid_p" type="date" class="dhidden" tabindex="-1"></div></div>
+      <div><label>วันที่รับเงิน</label><div class="dwrap"><input id="f_datePaid" type="text" inputmode="numeric" placeholder="วว/ดด/ปปปป" autocomplete="off"><button type="button" class="dcal" onclick="openPick('f_datePaid')" tabindex="-1"></button><input id="f_datePaid_p" type="date" class="dhidden" tabindex="-1"></div></div>
     </div>
 
-    <div class="fsec">📄 ติดตามเอกสาร <span style="font-weight:400;color:var(--muted)">(ค้าง / ได้แล้ว / ไม่ต้องใช้)</span></div>
+    <div class="fsec">ติดตามเอกสาร <span style="font-weight:400;color:var(--muted)">(ค้าง / ได้แล้ว / ไม่ต้องใช้)</span></div>
     <div class="ckrow">
-      <div><label>ส่ง Hard copy</label><select id="f_doc_hard"><option value="no">❌ ค้าง</option><option value="yes">✅ ได้แล้ว</option><option value="na">— ไม่ต้องใช้</option></select></div>
-      <div><label>EL & Rep Letter</label><select id="f_doc_elRep"><option value="no">❌ ค้าง</option><option value="yes">✅ ได้แล้ว</option><option value="na">— ไม่ต้องใช้</option></select></div>
-      <div><label>Confirm signed</label><select id="f_doc_confirm"><option value="no">❌ ค้าง</option><option value="yes">✅ ได้แล้ว</option><option value="na">— ไม่ต้องใช้</option></select></div>
-      <div><label>ใบหัก ณ ที่จ่าย</label><select id="f_doc_whtCert"><option value="no">❌ ค้าง</option><option value="yes">✅ ได้แล้ว</option><option value="na">— ไม่ต้องใช้</option></select></div>
-      <div><label>ยืนยัน ผถห.ไทย</label><select id="f_doc_shLetter"><option value="no">❌ ค้าง</option><option value="yes">✅ ได้แล้ว</option><option value="na">— ไม่ต้องใช้</option></select></div>
+      <div><label>ส่ง Hard copy</label><select id="f_doc_hard"><option value="no">ค้าง</option><option value="yes">ได้แล้ว</option><option value="na">— ไม่ต้องใช้</option></select></div>
+      <div><label>EL & Rep Letter</label><select id="f_doc_elRep"><option value="no">ค้าง</option><option value="yes">ได้แล้ว</option><option value="na">— ไม่ต้องใช้</option></select></div>
+      <div><label>Confirm signed</label><select id="f_doc_confirm"><option value="no">ค้าง</option><option value="yes">ได้แล้ว</option><option value="na">— ไม่ต้องใช้</option></select></div>
+      <div><label>ใบหัก ณ ที่จ่าย</label><select id="f_doc_whtCert"><option value="no">ค้าง</option><option value="yes">ได้แล้ว</option><option value="na">— ไม่ต้องใช้</option></select></div>
+      <div><label>ยืนยัน ผถห.ไทย</label><select id="f_doc_shLetter"><option value="no">ค้าง</option><option value="yes">ได้แล้ว</option><option value="na">— ไม่ต้องใช้</option></select></div>
     </div>
 
     <div class="frow one" style="margin-top:12px"><div><label>หมายเหตุ</label><textarea id="f_note" rows="2"></textarea></div></div>
     <div class="btnrow">
       <button class="btn btn-g" onclick="resetForm()">ล้างฟอร์ม</button>
-      <button class="btn btn-p" onclick="saveForm()">💾 บันทึก</button>
+      <button class="btn btn-p" onclick="saveForm()">บันทึก</button>
     </div>
   </div>
   <datalist id="dlAuditor"></datalist>
@@ -447,21 +455,21 @@ th.st:hover{color:#bfe6e8}
 
 <!-- ============ DATA ============ -->
 <section class="page" id="pg-data">
-  <h2>☁️ Sync ข้ามเครื่อง (คอม + มือถือ)</h2>
+  <h2>Sync ข้ามเครื่อง (คอม + มือถือ)</h2>
   <div class="card" id="syncBox"></div>
 
   <h2>ข้อมูล & สำรองข้อมูล</h2>
-  <div class="note">💡 ข้อมูลเก็บใน localStorage ของแต่ละเครื่อง — ถ้าเปิด Sync ไว้ ทุกเครื่องจะดึง/ส่งข้อมูลหากันอัตโนมัติผ่าน cloud (เข้ารหัสด้วย PIN ก่อนส่งเสมอ) แนะนำ Export JSON สำรองไว้เป็นระยะอยู่ดี</div>
-  <button class="dbtn" onclick="exportExcel()"><span class="ico">📤</span><span><span class="t">Export เป็น Excel</span><br><span class="d">ดาวน์โหลดข้อมูลปีที่เลือกเป็นไฟล์ .xlsx โครงเดียวกับไฟล์เดิม</span></span></button>
-  <button class="dbtn" onclick="document.getElementById('impXlsx').click()"><span class="ico">📥</span><span><span class="t">Import จาก Excel</span><br><span class="d">อ่านไฟล์ Audit 25xx.xlsx (โครงเดิม) — อัพเดทรายที่มีอยู่ / เพิ่มรายใหม่</span></span></button>
+  <div class="note">ข้อมูลเก็บใน localStorage ของแต่ละเครื่อง — ถ้าเปิด Sync ไว้ ทุกเครื่องจะดึง/ส่งข้อมูลหากันอัตโนมัติผ่าน cloud (เข้ารหัสด้วย PIN ก่อนส่งเสมอ) แนะนำ Export JSON สำรองไว้เป็นระยะอยู่ดี</div>
+  <button class="dbtn" onclick="exportExcel()"><span class="ico"></span><span><span class="t">Export เป็น Excel</span><br><span class="d">ดาวน์โหลดข้อมูลปีที่เลือกเป็นไฟล์ .xlsx โครงเดียวกับไฟล์เดิม</span></span></button>
+  <button class="dbtn" onclick="document.getElementById('impXlsx').click()"><span class="ico"></span><span><span class="t">Import จาก Excel</span><br><span class="d">อ่านไฟล์ Audit 25xx.xlsx (โครงเดิม) — อัพเดทรายที่มีอยู่ / เพิ่มรายใหม่</span></span></button>
   <input type="file" id="impXlsx" accept=".xlsx,.xls" style="display:none">
-  <button class="dbtn" onclick="document.getElementById('impTaxT').click()"><span class="ico">🔢</span><span><span class="t">Import เลขนิติบุคคล (เติมอย่างเดียว)</span><br><span class="d">Export → กรอกคอลัมน์ “เลขนิติบุคคล” ใน Excel → เลือกไฟล์กลับเข้ามา — จับคู่ด้วยชื่อกิจการ เติมเฉพาะเลข ไม่แตะข้อมูลอื่น (เติมให้ทุกปีของกิจการนั้น)</span></span></button>
+  <button class="dbtn" onclick="document.getElementById('impTaxT').click()"><span class="ico"></span><span><span class="t">Import เลขนิติบุคคล (เติมอย่างเดียว)</span><br><span class="d">Export → กรอกคอลัมน์ “เลขนิติบุคคล” ใน Excel → เลือกไฟล์กลับเข้ามา — จับคู่ด้วยชื่อกิจการ เติมเฉพาะเลข ไม่แตะข้อมูลอื่น (เติมให้ทุกปีของกิจการนั้น)</span></span></button>
   <input type="file" id="impTaxT" accept=".xlsx,.xls,.csv" style="display:none">
-  <button class="dbtn" onclick="exportJSON()"><span class="ico">🗄️</span><span><span class="t">สำรองข้อมูล (JSON)</span><br><span class="d">ดาวน์โหลดข้อมูลทั้งหมดทุกปี ไว้ย้ายเครื่อง/กันข้อมูลหาย</span></span></button>
-  <button class="dbtn" onclick="document.getElementById('impJson').click()"><span class="ico">♻️</span><span><span class="t">กู้คืนจาก JSON</span><br><span class="d">แทนที่ข้อมูลทั้งหมดด้วยไฟล์สำรอง</span></span></button>
+  <button class="dbtn" onclick="exportJSON()"><span class="ico"></span><span><span class="t">สำรองข้อมูล (JSON)</span><br><span class="d">ดาวน์โหลดข้อมูลทั้งหมดทุกปี ไว้ย้ายเครื่อง/กันข้อมูลหาย</span></span></button>
+  <button class="dbtn" onclick="document.getElementById('impJson').click()"><span class="ico"></span><span><span class="t">กู้คืนจาก JSON</span><br><span class="d">แทนที่ข้อมูลทั้งหมดด้วยไฟล์สำรอง</span></span></button>
   <input type="file" id="impJson" accept=".json" style="display:none">
-  <button class="dbtn" onclick="cleanupBomJune()"><span class="ico">🔧</span><span><span class="t">จัดระเบียบ: รวมชื่อบอม + ปิดงาน P'Bom/P'June</span><br><span class="d">รวม “พี่บอม/บอม” → P'Bom และตั้งทุกงบของ P'Bom & P'June เป็น “รับเงินแล้ว + ลงชื่อแล้ว” (เหลือแต่ Poom ที่ยังค้าง) — แนะนำสำรอง JSON ก่อน</span></span></button>
-  <button class="dbtn" onclick="resetAll()"><span class="ico">🗑️</span><span><span class="t" style="color:var(--red)">ล้างข้อมูลทั้งหมด</span><br><span class="d">ลบทุกรายการและกลับไปใช้ข้อมูลตั้งต้นจาก Excel</span></span></button>
+  <button class="dbtn" onclick="cleanupBomJune()"><span class="ico"></span><span><span class="t">จัดระเบียบ: รวมชื่อบอม + ปิดงาน P'Bom/P'June</span><br><span class="d">รวม “พี่บอม/บอม” → P'Bom และตั้งทุกงบของ P'Bom & P'June เป็น “รับเงินแล้ว + ลงชื่อแล้ว” (เหลือแต่ Poom ที่ยังค้าง) — แนะนำสำรอง JSON ก่อน</span></span></button>
+  <button class="dbtn" onclick="resetAll()"><span class="ico"></span><span><span class="t" style="color:var(--red)">ล้างข้อมูลทั้งหมด</span><br><span class="d">ลบทุกรายการและกลับไปใช้ข้อมูลตั้งต้นจาก Excel</span></span></button>
   <div class="lsum" id="dataStat"></div>
 
   <h2>จัดการรายชื่อ</h2>
@@ -471,22 +479,22 @@ th.st:hover{color:#bfe6e8}
 </main>
 
 <nav>
-  <button class="active" data-pg="pg-dash"><span class="ico">📊</span>Dashboard</button>
-  <button data-pg="pg-list"><span class="ico">📋</span>รายการงบ</button>
-  <button data-pg="pg-contact"><span class="ico">🧾</span>ตามลูกค้า</button>
-  <button data-pg="pg-form" onclick="resetForm()"><span class="ico">➕</span>เพิ่มงบ</button>
-  <button data-pg="pg-data"><span class="ico">⚙️</span>ข้อมูล</button>
+  <button class="active" data-pg="pg-dash"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></span>Dashboard</button>
+  <button data-pg="pg-list"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3.5" y1="6" x2="3.51" y2="6"/><line x1="3.5" y1="12" x2="3.51" y2="12"/><line x1="3.5" y1="18" x2="3.51" y2="18"/></svg></span>รายการงบ</button>
+  <button data-pg="pg-contact"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="3.2"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.3a4 4 0 0 1 0 7.4"/></svg></span>ตามลูกค้า</button>
+  <button data-pg="pg-form" onclick="resetForm()"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></span>เพิ่มงบ</button>
+  <button data-pg="pg-data"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1.5" y1="14" x2="6.5" y2="14"/><line x1="9.5" y1="8" x2="14.5" y2="8"/><line x1="17.5" y1="16" x2="22.5" y2="16"/></svg></span>ข้อมูล</button>
 </nav>
 <div id="toast"></div>
 
 <div id="unlock" style="display:none">
   <div class="ubox">
-    <div style="font-size:38px;margin-bottom:8px">🔐</div>
+    <div style="font-size:38px;margin-bottom:8px"></div>
     <h1>Audit Tracker</h1>
     <p id="unlockMsg">ใส่รหัสปลดล็อคเพื่อโหลดข้อมูลงบสอบบัญชี<br>(ใส่ครั้งแรกครั้งเดียว เครื่องนี้จะจำไว้)</p>
     <input id="pinInput" type="text" placeholder="ใส่รหัส PIN" inputmode="numeric" autocomplete="off" autocapitalize="off" spellcheck="false">
     <div class="umsg" id="pinMsg"></div>
-    <button class="btn btn-p" onclick="tryUnlock()">🔓 ปลดล็อค</button>
+    <button class="btn btn-p" onclick="tryUnlock()">ปลดล็อค</button>
     <button class="skip" id="unlockSkip" onclick="skipUnlock()">เริ่มใช้แบบไม่มีข้อมูลตั้งต้น</button>
   </div>
 </div>
@@ -505,7 +513,7 @@ try{
   else if(window.SEED_ENC)needUnlock=true;
 }catch(e){records=window.SEED_DATA||[];}
 function save(){
-  try{localStorage.setItem(LS_KEY,JSON.stringify({version:2,records,lists}));}catch(e){toast('⚠️ บันทึกไม่สำเร็จ: พื้นที่เต็ม');}
+  try{localStorage.setItem(LS_KEY,JSON.stringify({version:2,records,lists}));}catch(e){toast('บันทึกไม่สำเร็จ: พื้นที่เต็ม');}
   if(typeof scheduleSync==='function')scheduleSync();
 }
 const live=()=>records.filter(r=>!r.deleted);
@@ -611,7 +619,7 @@ function renderWrongSign(rs){
     <div style="min-width:0"><div style="font-weight:700;font-size:13px">${esc(r.company)}</div><div style="font-size:11px;color:var(--muted)">${r.contact?esc(r.contact)+' · ':''}แจ้ง/จองชื่อ ${fmtD(r.dateNotified)} · ลงชื่อ ${fmtD(r.dateSigned)}</div></div>
     <div style="white-space:nowrap;font-weight:800;font-size:12px;color:#c81e1e">ลงชื่อก่อน</div></div>`;
   box.innerHTML=`<div class="card" style="border:1.5px solid #f8b4b4;background:#fff5f5">
-    <h2 style="margin:0 0 6px;color:#c81e1e">🚨 ลงชื่อก่อนวันจองชื่อ — ต้องแก้ (${bad.length} งบ)</h2>
+    <h2 style="margin:0 0 6px;color:#c81e1e">ลงชื่อก่อนวันจองชื่อ — ต้องแก้ (${bad.length} งบ)</h2>
     <div style="font-size:12px;color:#8a2a2a;margin-bottom:8px">วันลงรายชื่อในรายงานอยู่ก่อนวันแจ้ง/จองชื่อกับสภาฯ ซึ่งผิดหลักเกณฑ์ — ควรตรวจสอบ/แก้วันที่</div>
     ${bad.slice(0,20).map(row).join('')}
     ${bad.length>20?`<div style="font-size:11.5px;color:var(--muted);margin-top:7px">…และอีก ${bad.length-20} งบ</div>`:''}</div>`;
@@ -627,9 +635,9 @@ function renderDeadline(rs){
     <div style="white-space:nowrap;font-weight:800;font-size:12.5px;color:${x.days<0?'#c81e1e':'#b45309'}">${x.days<0?'เกิน '+(-x.days)+' วัน':'เหลือ '+x.days+' วัน'}</div></div>`;
   box.innerHTML=`<div class="card" style="${over.length?'border:1.5px solid #f8b4b4':''}">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px">
-      <h2 style="margin:0">⏰ กำหนดส่ง — งบยังไม่ลงชื่อ</h2>
+      <h2 style="margin:0">กำหนดส่ง — งบยังไม่ลงชื่อ</h2>
       <div style="display:flex;gap:5px;flex-wrap:wrap">${over.length?`<span class="badge b-red">เกินกำหนด ${over.length}</span>`:''}${soon.length?`<span class="badge b-amber">≤30 วัน ${soon.length}</span>`:''}<span class="badge b-gray">>30 วัน ${later.length}</span></div></div>
-    ${show.length?show.map(row).join(''):'<div style="color:var(--muted);font-size:13px">ไม่มีงบที่ใกล้/เกินกำหนด 🎉</div>'}
+    ${show.length?show.map(row).join(''):'<div style="color:var(--muted);font-size:13px">ไม่มีงบที่ใกล้/เกินกำหนด</div>'}
     ${un.length>show.length?`<div style="font-size:11.5px;color:var(--muted);margin-top:7px">…และอีก ${un.length-show.length} งบ</div>`:''}
     <div style="font-size:11px;color:var(--muted);margin-top:8px">* ประมาณจากวันสิ้นงวด + ${AGM_MONTHS} เดือน (กำหนดประชุมผู้ถือหุ้น)</div></div>`;
 }
@@ -640,7 +648,7 @@ function renderYoY(rs){
   if(years.length<2){box.innerHTML='';return;}
   const rows=years.map((y,i)=>{const c=byY[y],prev=i>0?byY[years[i-1]]:null,g=prev&&prev.net?Math.round((c.net-prev.net)/prev.net*100):null;
     return `<tr><td style="font-weight:700">${y}</td><td class="r">${fmtN(c.n)}</td><td class="r">${fmtB(c.fee)}</td><td class="r">${fmtB(c.net)}</td><td class="r" style="font-weight:700;color:${g==null?'var(--muted)':g>=0?'#046c4e':'#c81e1e'}">${g==null?'-':(g>=0?'▲+':'▼')+g+'%'}</td></tr>`;}).join('');
-  box.innerHTML=`<div class="card"><h2 style="margin:0 0 8px">📈 เทียบปีต่อปี (โต YoY)</h2>
+  box.innerHTML=`<div class="card"><h2 style="margin:0 0 8px">เทียบปีต่อปี (โต YoY)</h2>
     <div class="tblwrap"><table style="width:100%;font-size:13px"><thead><tr><th style="text-align:left">ปี</th><th class="r">งบ</th><th class="r">ค่าสอบ</th><th class="r">สุทธิเรา</th><th class="r">โต%</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 function renderConc(rs){
@@ -649,8 +657,8 @@ function renderConc(rs){
   const arr=Object.entries(byC).map(([c,v])=>({c,...v})).sort((a,b)=>b.fee-a.fee);
   const tot=arr.reduce((s,x)=>s+x.fee,0)||1,topShare=Math.round(arr[0].fee/tot*100);
   const bar=x=>{const p=Math.round(x.fee/tot*100);return `<div style="margin-bottom:7px"><div style="display:flex;justify-content:space-between;font-size:12.5px;gap:8px"><span style="font-weight:600;min-width:0">${esc(x.c)} <span style="color:var(--muted)">(${fmtN(x.n)} งบ)</span></span><span style="font-weight:800;white-space:nowrap">${p}% · ${fmtB(x.fee)}</span></div><div style="height:7px;background:#eceff3;border-radius:5px;margin-top:3px;overflow:hidden"><div style="height:100%;width:${p}%;background:${p>=40?'#c81e1e':'var(--teal)'}"></div></div></div>`;};
-  box.innerHTML=`<div class="card"><h2 style="margin:0 0 5px">🧩 กระจุกตัวลูกค้า (ปี ${curYear})</h2>
-    <div style="font-size:12px;color:${topShare>=40?'#c81e1e':'var(--muted)'};margin-bottom:9px">${topShare>=40?'⚠️ ':''}พึ่ง “${esc(arr[0].c)}” ${topShare}% ของค่าสอบทั้งปี${topShare>=40?' — เสี่ยงกระจุกตัว ควรกระจายฐานลูกค้า':''}</div>
+  box.innerHTML=`<div class="card"><h2 style="margin:0 0 5px">กระจุกตัวลูกค้า (ปี ${curYear})</h2>
+    <div style="font-size:12px;color:${topShare>=40?'#c81e1e':'var(--muted)'};margin-bottom:9px">${topShare>=40?'':''}พึ่ง “${esc(arr[0].c)}” ${topShare}% ของค่าสอบทั้งปี${topShare>=40?' — เสี่ยงกระจุกตัว ควรกระจายฐานลูกค้า':''}</div>
     ${arr.slice(0,5).map(bar).join('')}</div>`;
 }
 function renderRetention(rs){
@@ -661,8 +669,8 @@ function renderRetention(rs){
   const churned=[...prevByCo.entries()].filter(([co])=>!curCos.has(co)).map(([,r])=>r);
   const retained=prevByCo.size-churned.length,rate=Math.round(retained/prevByCo.size*100),show=churned.slice(0,12);
   box.innerHTML=`<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:6px">
-    <h2 style="margin:0">🔁 ลูกค้ากลับมา (${prevY}→${curYear})</h2><span class="badge ${rate>=80?'b-green':rate>=60?'b-amber':'b-red'}">คงอยู่ ${rate}%</span></div>
-    <div style="font-size:12.5px;color:var(--muted);margin-bottom:${churned.length?'8':'0'}px">ปี ${prevY} มี ${fmtN(prevByCo.size)} กิจการ · กลับมา ${fmtN(retained)} · ${churned.length?'ยังไม่กลับมา '+fmtN(churned.length)+' ราย ↓ (ควรตามต่อ)':'กลับมาครบ 🎉'}</div>
+    <h2 style="margin:0">ลูกค้ากลับมา (${prevY}→${curYear})</h2><span class="badge ${rate>=80?'b-green':rate>=60?'b-amber':'b-red'}">คงอยู่ ${rate}%</span></div>
+    <div style="font-size:12.5px;color:var(--muted);margin-bottom:${churned.length?'8':'0'}px">ปี ${prevY} มี ${fmtN(prevByCo.size)} กิจการ · กลับมา ${fmtN(retained)} · ${churned.length?'ยังไม่กลับมา '+fmtN(churned.length)+' ราย ↓ (ควรตามต่อ)':'กลับมาครบ'}</div>
     ${show.map(r=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13px"><div style="min-width:0"><b>${esc(r.company)}</b>${r.contact?' · <span style="color:var(--muted)">'+esc(r.contact)+'</span>':''}</div><div style="white-space:nowrap;color:var(--muted)">ปีก่อน ${fmtB(r.fee||0)}</div></div>`).join('')}
     ${churned.length>show.length?`<div style="font-size:11.5px;color:var(--muted);margin-top:7px">…และอีก ${churned.length-show.length} ราย</div>`:''}</div>`;
 }
@@ -671,7 +679,7 @@ function renderDash(){
   const sel=document.getElementById('dashAuditor');
   const cur=sel.value;
   const auds=[...new Set(all.map(r=>r.auditor||'Poom'))].sort();
-  sel.innerHTML='<option value="">👥 Auditor ทั้งหมด</option>'+auds.map(a=>`<option>${esc(a)}</option>`).join('');
+  sel.innerHTML='<option value="">Auditor ทั้งหมด</option>'+auds.map(a=>`<option>${esc(a)}</option>`).join('');
   if(auds.includes(cur))sel.value=cur;
   const rs=sel.value?all.filter(r=>(r.auditor||'Poom')===sel.value):all;
   const signed=rs.filter(isSigned);
@@ -939,14 +947,14 @@ function pvSortBy(ci){
 document.getElementById('pvRow').addEventListener('change',e=>{pivCfg.row=e.target.value;if(pivCfg.col===pivCfg.row)pivCfg.col='';pivSort={ci:1,d:-1};pivSave();renderPivot();});
 document.getElementById('pvCol').addEventListener('change',e=>{pivCfg.col=e.target.value;pivSort={ci:1,d:-1};pivSave();renderPivot();});
 function exportPivot(){
-  if(typeof XLSX==='undefined'){toast('⚠️ ต้องต่อเน็ตครั้งแรกเพื่อโหลดตัวช่วย Excel');return;}
+  if(typeof XLSX==='undefined'){toast('ต้องต่อเน็ตครั้งแรกเพื่อโหลดตัวช่วย Excel');return;}
   if(!_pivMatrix)return;
   const aoa=[_pivMatrix.hdr,..._pivMatrix.rows.map(r=>r.map((c,i)=>i?Math.round(c):c)),_pivMatrix.total.map((c,i)=>i?Math.round(c):c)];
   const ws=XLSX.utils.aoa_to_sheet(aoa);
   ws['!cols']=_pivMatrix.hdr.map((h,i)=>({wch:i?14:30}));
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Pivot');
   XLSX.writeFile(wb,'Pivot '+PIV_DIMS[pivCfg.row].lb+' '+curYear+'.xlsx');
-  toast('📤 Export Pivot แล้ว');
+  toast('Export Pivot แล้ว');
 }
 
 /* ===== แท็บตามลูกค้า (การ์ดไว้แคปส่งลูกค้า) ===== */
@@ -980,23 +988,23 @@ function renderContactCard(){
     <div class="cchead">
       <div><div class="ccname">${esc(c)}</div>
       <div class="ccsub">สรุปงานสอบบัญชี ปี ${curYear} · ข้อมูล ณ ${fmtD(todayBE())}</div></div>
-      <div class="cclogo">📋</div>
+      <div class="cclogo"></div>
     </div>
     <div class="ccstats">
       <div>งบทั้งหมด<b>${fmtN(rs.length)}</b></div>
       <div>ลงชื่อแล้ว<b class="gd">${fmtN(signed.length)}</b></div>
       <div>ยอดค้างชำระ<b class="rd">${fmtB(Math.round(dueTot))}</b></div>
     </div>
-    <div class="ccsec">💸 ค้างชำระ — งบที่ลงชื่อแล้ว (${fmtN(due.length)} งบ)</div>
+    <div class="ccsec">ค้างชำระ — งบที่ลงชื่อแล้ว (${fmtN(due.length)} งบ)</div>
     ${due.length?`<div class="cctbl"><table>
       <tr><th>กิจการ</th><th class="r">ลงชื่อ</th><th class="r">ยอด (฿)</th></tr>
       ${due.map(r=>`<tr><td>${esc(r.company)}</td><td class="r">${r.dateSigned?fmtD(r.dateSigned):'✓'}</td><td class="r">${fmtN(Math.round(clientDue(r)))}</td></tr>`).join('')}
     </table></div>
     <div class="cctotal">รวมค้างชำระ ${fmtB(Math.round(dueTot))}</div>`
-    :'<div class="ccok">✅ ไม่มียอดค้างชำระ</div>'}
-    <div class="ccsec">📄 เอกสารที่ยังไม่ได้รับ (เฉพาะงบที่ลงชื่อแล้ว)</div>
+    :'<div class="ccok">ไม่มียอดค้างชำระ</div>'}
+    <div class="ccsec">เอกสารที่ยังไม่ได้รับ (เฉพาะงบที่ลงชื่อแล้ว)</div>
     ${docMiss.length?docMiss.map(d=>`<div class="ccdoc"><b>${d.lb} (${d.list.length}):</b> ${d.list.map(r=>esc(r.company)).join(' · ')}</div>`).join('')
-    :'<div class="ccok">✅ เอกสารครบทุกงบ</div>'}
+    :'<div class="ccok">เอกสารครบทุกงบ</div>'}
     <div class="ccfoot">TPN Audit · Audit Tracker</div>
   </div>`;
 }
@@ -1014,7 +1022,7 @@ function renderDocDetail(signed){
       <button onclick="gotoDoc('${dashDocSel}')" style="border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;background:#e1effe;color:#1e429f;white-space:nowrap">เปิดในรายการงบ →</button>
     </div>
     ${keys.map(c=>`<div class="docgrp"><div class="gh">${esc(c)} — ${byC[c].length} งบ</div>
-      <div class="gc">${byC[c].map(r=>esc(r.company)).join(' · ')}</div></div>`).join('')||'<div style="color:var(--muted);font-size:13px">ไม่มีรายการค้าง 🎉</div>'}
+      <div class="gc">${byC[c].map(r=>esc(r.company)).join(' · ')}</div></div>`).join('')||'<div style="color:var(--muted);font-size:13px">ไม่มีรายการค้าง</div>'}
   </div>`;
 }
 function gotoDoc(k){
@@ -1109,26 +1117,26 @@ function renderList(){
         <div style="min-width:0"><div class="nm">${esc(r.company)}</div>${r.taxId?`<div class="tid">${esc(r.taxId)}</div>`:''}</div></div>
       <div class="fee">${fmtB(r.fee||0)}</div></div>
       <div class="meta">
-        <span class="badge ${isSigned(r)?'b-green':'b-amber'}">${isSigned(r)?'✍️ ลงชื่อ'+(r.dateSigned?' '+fmtD(r.dateSigned):'แล้ว (ไม่ระบุวัน)'):'⏳ รอลงชื่อ'}</span>
-        <span class="badge ${r.paid?'b-green':'b-red'}">${r.paid?'✅ รับเงินแล้ว':'💸 ค้าง '+fmtN(Math.round(net(r)))}</span>
+        <span class="badge ${isSigned(r)?'b-green':'b-amber'}">${isSigned(r)?'ลงชื่อ'+(r.dateSigned?' '+fmtD(r.dateSigned):'แล้ว (ไม่ระบุวัน)'):'รอลงชื่อ'}</span>
+        <span class="badge ${r.paid?'b-green':'b-red'}">${r.paid?'รับเงินแล้ว':'ค้าง '+fmtN(Math.round(net(r)))}</span>
         <span class="badge b-blue">${esc(r.auditor||'Poom')}</span>
         ${r.contact?`<span class="badge b-gray">${esc(r.contact)}</span>`:''}
         ${r.month?`<span class="badge b-gray">รอบ ด.${r.month}</span>`:''}
-        ${r.opinion?`<span class="badge b-amber">⚠️ ${esc(r.opinion)}</span>`:''}
-        ${r.revenue?`<span class="badge b-gray">📈 ${esc(r.revenue)}</span>`:''}
+        ${r.opinion?`<span class="badge b-amber">${esc(r.opinion)}</span>`:''}
+        ${r.revenue?`<span class="badge b-gray">${esc(r.revenue)}</span>`:''}
         ${r.inSystem?'<span class="badge b-blue">เข้าระบบ</span>':''}
-        ${guessStmt(r)==='liq'?'<span class="badge b-red">🚫 งบเลิกกิจการ</span>':''}
-        ${signedBeforeNotified(r)?'<span class="badge b-red">🚨 ลงชื่อก่อนจองชื่อ</span>':''}
+        ${guessStmt(r)==='liq'?'<span class="badge b-red">งบเลิกกิจการ</span>':''}
+        ${signedBeforeNotified(r)?'<span class="badge b-red">ลงชื่อก่อนจองชื่อ</span>':''}
       </div>
       <div class="dts">แจ้ง ${fmtD(r.dateNotified)} · งบปี ${fmtD(r.fyEnd)}${r.datePaid?' · รับเงิน '+fmtD(r.datePaid):''}${r.incentive?' · Incentive '+fmtB(r.incentive):''}${r.assistantFee?' · ผู้ช่วย '+fmtB(r.assistantFee)+(r.assistantName?' ('+esc(r.assistantName)+')':''):''}${r.commission?' · ค่า ref '+fmtB(r.commission)+(r.commissionPct?' ('+r.commissionPct+'%)':''):''}${r.auditorShare?' · แบ่งผู้สอบ '+fmtB(r.auditorShare)+' / เรา '+fmtB(r.poomShare||0):''}${r.note?' · '+esc(r.note):''}</div>
       <div class="docs">${docs}</div>
       ${selMode?'':`<div class="acts">
-        ${!isSigned(r)?`<button class="a-sign" onclick="quickSign('${r.id}')">✍️ ลงชื่อวันนี้</button>`:''}
-        ${!r.paid?`<button class="a-paid" onclick="quickPaid('${r.id}')">💰 รับเงินแล้ว</button>`:''}
-        <button class="a-edit" onclick="editRec('${r.id}')">✏️ แก้ไข</button>
-        <button class="a-edit" style="background:#e0f2fe;color:#075985" title="ลูกค้าจ้างต่อ — ขึ้นปีงบใหม่ (Rollforward) รีเซ็ตวันที่/เงิน" onclick="dupNextYear('${r.id}')">🔄 ต่อปีหน้า</button>
-        <button class="a-edit" style="background:#fef3c7;color:#92400e" title="ส่งล่าช้า ลงนามปีหน้า — คัดลอกทั้งหมด ปีงบเดิม" onclick="dupSameYear('${r.id}')">📋 ยกไปปีหน้า</button>
-        <button class="a-del" onclick="delRec('${r.id}')">🗑</button>
+        ${!isSigned(r)?`<button class="a-sign" onclick="quickSign('${r.id}')">ลงชื่อวันนี้</button>`:''}
+        ${!r.paid?`<button class="a-paid" onclick="quickPaid('${r.id}')">รับเงินแล้ว</button>`:''}
+        <button class="a-edit" onclick="editRec('${r.id}')">แก้ไข</button>
+        <button class="a-edit" style="background:#e0f2fe;color:#075985" title="ลูกค้าจ้างต่อ — ขึ้นปีงบใหม่ (Rollforward) รีเซ็ตวันที่/เงิน" onclick="dupNextYear('${r.id}')">ต่อปีหน้า</button>
+        <button class="a-edit" style="background:#fef3c7;color:#92400e" title="ส่งล่าช้า ลงนามปีหน้า — คัดลอกทั้งหมด ปีงบเดิม" onclick="dupSameYear('${r.id}')">ยกไปปีหน้า</button>
+        <button class="a-del" onclick="delRec('${r.id}')"></button>
       </div>`}</div>`;
   }).join('')||'<div class="card" style="text-align:center;color:var(--muted)">ไม่พบรายการ</div>';
   const more=document.getElementById('moreBtn');
@@ -1142,10 +1150,10 @@ function toggleSelMode(){
   selMode=!selMode;
   if(!selMode)selected.clear();
   document.getElementById('bulkBar').style.display=selMode?'block':'none';
-  document.getElementById('selModeBtn').textContent=selMode?'✖ ปิด':'☑️ เลือก';
+  document.getElementById('selModeBtn').textContent=selMode?'ปิด':'เลือก';
   document.getElementById('selModeBtn').style.background=selMode?'#fde8e8':'#eceff3';
   document.getElementById('selModeBtn').style.color=selMode?'#c81e1e':'var(--navy)';
-  if(selMode){document.getElementById('bulkDocK').innerHTML='<option value="">📄 เอกสาร...</option>'+Object.entries(DOCS).map(([k,lb])=>`<option value="${k}">${lb}</option>`).join('');
+  if(selMode){document.getElementById('bulkDocK').innerHTML='<option value="">เอกสาร...</option>'+Object.entries(DOCS).map(([k,lb])=>`<option value="${k}">${lb}</option>`).join('');
     F('bulkDate').value=fmtDMY(todayBE());}
   renderList();
 }
@@ -1174,7 +1182,7 @@ function bulkSign(){
   const d=bulkDate();
   if(!confirm('ลงชื่อ '+rs.length+' งบ วันที่ '+fmtD(d)+'?'))return;
   const now=Date.now();rs.forEach(r=>{r.dateSigned=d;r.signedFlag=false;r.updatedAt=now;});
-  afterBulk('✍️ ลงชื่อ '+rs.length+' งบแล้ว');
+  afterBulk('ลงชื่อ '+rs.length+' งบแล้ว');
 }
 function bulkPaid(){
   const rs=selRecs().filter(r=>!r.paid);
@@ -1182,7 +1190,7 @@ function bulkPaid(){
   const d=bulkDate();
   if(!confirm('ทำเครื่องหมายรับเงินแล้ว '+rs.length+' งบ วันที่ '+fmtD(d)+'?'))return;
   const now=Date.now();rs.forEach(r=>{r.paid=true;r.datePaid=d;r.updatedAt=now;});
-  afterBulk('💰 รับเงินแล้ว '+rs.length+' งบ');
+  afterBulk('รับเงินแล้ว '+rs.length+' งบ');
 }
 function bulkDoc(){
   const k=document.getElementById('bulkDocK').value;
@@ -1194,19 +1202,19 @@ function bulkDoc(){
   if(!confirm('ตั้ง "'+DOCS[k]+'" = '+vLb+' ให้ '+rs.length+' งบ?'))return;
   const dv=v==='yes'?true:v==='na'?null:false;const now=Date.now();
   rs.forEach(r=>{if(!r.docs)r.docs={};r.docs[k]=dv;r.updatedAt=now;});
-  afterBulk('📄 อัพเดต '+DOCS[k]+' ('+vLb+') '+rs.length+' งบ');
+  afterBulk('อัพเดต '+DOCS[k]+' ('+vLb+') '+rs.length+' งบ');
 }
 function bulkDelete(){
   const rs=selRecs();
   if(!rs.length){toast('ยังไม่ได้เลือกงบ');return;}
-  if(!confirm('⚠️ ลบ '+rs.length+' งบที่เลือก?\n(ลบออกจากทุกเครื่อง กู้คืนได้จากไฟล์สำรองเท่านั้น)'))return;
+  if(!confirm('ลบ '+rs.length+' งบที่เลือก?\n(ลบออกจากทุกเครื่อง กู้คืนได้จากไฟล์สำรองเท่านั้น)'))return;
   const now=Date.now();rs.forEach(r=>{r.deleted=true;r.updatedAt=now;});
-  afterBulk('🗑 ลบ '+rs.length+' งบแล้ว');
+  afterBulk('ลบ '+rs.length+' งบแล้ว');
 }
 document.getElementById('moreBtn').addEventListener('click',()=>{listLimit+=100;renderList();});
 function findRec(id){return records.find(r=>r.id===id);}
-function quickSign(id){const r=findRec(id);if(!r)return;r.dateSigned=todayBE();r.signedFlag=false;r.updatedAt=Date.now();save();renderList();toast('✍️ ลงชื่อ: '+r.company);}
-function quickPaid(id){const r=findRec(id);if(!r)return;r.paid=true;r.datePaid=todayBE();r.updatedAt=Date.now();save();renderList();toast('💰 รับเงินแล้ว: '+r.company);}
+function quickSign(id){const r=findRec(id);if(!r)return;r.dateSigned=todayBE();r.signedFlag=false;r.updatedAt=Date.now();save();renderList();toast('ลงชื่อ: '+r.company);}
+function quickPaid(id){const r=findRec(id);if(!r)return;r.paid=true;r.datePaid=todayBE();r.updatedAt=Date.now();save();renderList();toast('รับเงินแล้ว: '+r.company);}
 function delRec(id){const r=findRec(id);if(!r)return;if(!confirm('ลบ "'+r.company+'" ?'))return;r.deleted=true;r.updatedAt=Date.now();save();renderList();toast('ลบแล้ว');}
 
 /* ================= form ================= */
@@ -1331,7 +1339,7 @@ function prefillFromId(id){
   Object.keys(DOCS).forEach(k=>F('f_doc_'+k).value=docVal(r,k)==='na'?'na':'no');
   document.getElementById('formTitle').textContent='เพิ่มงบใหม่ (ต่อจาก '+r.company+' ปี '+r.year+')';
   updNet();
-  toast('📎 ดึงข้อมูล "'+r.company+'" มาแล้ว — ตั้งเป็นปี '+(r.year+1));
+  toast('ดึงข้อมูล "'+r.company+'" มาแล้ว — ตั้งเป็นปี '+(r.year+1));
 }
 /* ทำซ้ำงบเดิมเป็นปีถัดไป (ลูกค้าจ้างหลายปี/ทำย้อนหลัง) — เปิดฟอร์มพร้อมข้อมูลเดิม เปลี่ยนปี+1 แก้ปีได้ */
 function dupNextYear(id){prefillFromId(id);showPage('pg-form');}
@@ -1341,8 +1349,8 @@ function dupSameYear(id){
   editRec(id);                              // โหลดทุกฟิลด์เข้าฟอร์ม (รวมวันที่/เอกสาร/เงิน)
   F('f_id').value='';                        // เคลียร์ id → บันทึกเป็นรายการใหม่
   F('f_year').value=r.year+1;                // เข้าทะเบียนปีหน้า แต่ fyEnd (ปีงบ) คงเดิม
-  document.getElementById('formTitle').textContent='📋 ยกงบไปทะเบียนปี '+(r.year+1)+' (คัดลอกทั้งหมด · ปีงบเดิม): '+r.company;
-  toast('📋 คัดลอกทั้งหมด → ทะเบียนปี '+(r.year+1)+' (ปีงบเดิม) · ตรวจแล้วกดบันทึก');
+  document.getElementById('formTitle').textContent='ยกงบไปทะเบียนปี '+(r.year+1)+' (คัดลอกทั้งหมด · ปีงบเดิม): '+r.company;
+  toast('คัดลอกทั้งหมด → ทะเบียนปี '+(r.year+1)+' (ปีงบเดิม) · ตรวจแล้วกดบันทึก');
 }
 /* จัดระเบียบครั้งเดียว: รวมชื่อบอม → P'Bom, และปิดงาน (รับเงิน+ลงชื่อ) ทุกงบของ P'Bom/P'June */
 function cleanupBomJune(){
@@ -1363,7 +1371,7 @@ function cleanupBomJune(){
   });
   mergeListsFromRecords();
   save();renderYearSel();renderList();renderDash();renderDataStat();
-  toast('🔧 รวมชื่อ '+renamed+' รายการ · ปิดงาน P\'Bom/P\'June '+marked+' งบ');
+  toast('รวมชื่อ '+renamed+' รายการ · ปิดงาน P\'Bom/P\'June '+marked+' งบ');
 }
 function resetForm(){
   F('f_id').value='';document.getElementById('formTitle').textContent='เพิ่มงบใหม่';
@@ -1402,9 +1410,9 @@ function editRec(id){
 }
 function saveForm(){
   const company=F('f_company').value.trim();
-  if(!company){toast('⚠️ กรุณาใส่ชื่อกิจการ');F('f_company').focus();return;}
+  if(!company){toast('กรุณาใส่ชื่อกิจการ');F('f_company').focus();return;}
   const _ds=getDF('f_dateSigned'),_dn=getDF('f_dateNotified');
-  if(_ds&&_dn&&_ds<_dn&&!confirm('🚨 วันลงรายชื่อ ('+fmtD(_ds)+') อยู่ก่อนวันแจ้ง/จองชื่อ ('+fmtD(_dn)+')\nซึ่งผิดหลักเกณฑ์ (ต้องจองชื่อก่อนลงนาม)\n\nกด OK เพื่อบันทึกต่อ · Cancel เพื่อกลับไปแก้วันที่'))return;
+  if(_ds&&_dn&&_ds<_dn&&!confirm('วันลงรายชื่อ ('+fmtD(_ds)+') อยู่ก่อนวันแจ้ง/จองชื่อ ('+fmtD(_dn)+')\nซึ่งผิดหลักเกณฑ์ (ต้องจองชื่อก่อนลงนาม)\n\nกด OK เพื่อบันทึกต่อ · Cancel เพื่อกลับไปแก้วันที่'))return;
   const id=F('f_id').value;
   const rec=id?findRec(id):{id:'r'+Date.now()+Math.random().toString(36).slice(2,6)};
   Object.assign(rec,{
@@ -1425,13 +1433,13 @@ function saveForm(){
   normalizeData();
   const addTo=(arr,v)=>{if(v&&!arr.includes(v)){arr.push(v);arr.sort();}};
   addTo(lists.auditors,rec.auditor);addTo(lists.contacts,rec.contact);addTo(lists.assistants,rec.assistantName);
-  save();renderYearSel();toast('💾 บันทึกแล้ว: '+company);
+  save();renderYearSel();toast('บันทึกแล้ว: '+company);
   resetForm();showPage('pg-list');
 }
 
 /* ================= import / export ================= */
 function download(name,blob){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),5000);}
-function exportJSON(){normalizeData();download('audit-tracker-backup-'+todayBE()+'.json',new Blob([JSON.stringify({version:2,records,lists},null,1)],{type:'application/json'}));toast('🗄️ สำรองข้อมูลแล้ว');}
+function exportJSON(){normalizeData();download('audit-tracker-backup-'+todayBE()+'.json',new Blob([JSON.stringify({version:2,records,lists},null,1)],{type:'application/json'}));toast('สำรองข้อมูลแล้ว');}
 document.getElementById('impJson').addEventListener('change',e=>{
   const f=e.target.files[0];if(!f)return;
   const rd=new FileReader();
@@ -1439,14 +1447,14 @@ document.getElementById('impJson').addEventListener('change',e=>{
     const d=JSON.parse(rd.result);const recs=d.records||d;
     if(!Array.isArray(recs))throw 0;
     if(!confirm('แทนที่ข้อมูลทั้งหมด ('+records.length+' รายการ) ด้วยไฟล์สำรอง ('+recs.length+' รายการ)?'))return;
-    records=recs;lists=d.lists||null;normalizeData();save();renderYearSel();renderDash();renderDataStat();toast('♻️ กู้คืนแล้ว '+recs.length+' รายการ');
-  }catch(err){toast('⚠️ ไฟล์ไม่ถูกต้อง');}};
+    records=recs;lists=d.lists||null;normalizeData();save();renderYearSel();renderDash();renderDataStat();toast('กู้คืนแล้ว '+recs.length+' รายการ');
+  }catch(err){toast('ไฟล์ไม่ถูกต้อง');}};
   rd.readAsText(f);e.target.value='';
 });
 function exportExcel(){
-  if(typeof XLSX==='undefined'){toast('⚠️ ต้องต่อเน็ตครั้งแรกเพื่อโหลดตัวช่วย Excel');return;}
+  if(typeof XLSX==='undefined'){toast('ต้องต่อเน็ตครั้งแรกเพื่อโหลดตัวช่วย Excel');return;}
   const rs=yearRecs();
-  if(!rs.length){toast('⚠️ ไม่มีข้อมูลปีนี้');return;}
+  if(!rs.length){toast('ไม่มีข้อมูลปีนี้');return;}
   const yn=v=>v?'Yes':'No';
   const hdr=['No.','วันที่แจ้ง','วันที่ลงรายชื่อ','Remark','Month','เลขนิติบุคคล','กิจการ','Auditor','Contact ลูกค้า','งบปี',
     'เข้าระบบ','รายได้ของงบ','ราคา','Incentive','หัก ณ ที่จ่าย','จ้างผู้ช่วย','ชื่อผู้ช่วย','รับสุทธิ','รับเงินแล้ว','วันที่รับเงิน',
@@ -1466,13 +1474,13 @@ function exportExcel(){
   ws['!cols']=[{wch:5},{wch:11},{wch:11},{wch:12},{wch:6},{wch:15},{wch:42},{wch:10},{wch:14},{wch:11},{wch:8},{wch:14},{wch:10},{wch:9},{wch:11},{wch:10},{wch:12},{wch:10},{wch:9},{wch:11},{wch:10},{wch:10},{wch:11},{wch:8},{wch:10},{wch:10},{wch:10},{wch:10},{wch:20},{wch:12},{wch:16}];
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,String(curYear));
-  XLSX.writeFile(wb,'Audit '+curYear+' export.xlsx');toast('📤 Export แล้ว '+rs.length+' รายการ (มีสูตร)');
+  XLSX.writeFile(wb,'Audit '+curYear+' export.xlsx');toast('Export แล้ว '+rs.length+' รายการ (มีสูตร)');
 }
 /* export current filtered list — for sending to clients/contacts */
 function exportListExcel(){
-  if(typeof XLSX==='undefined'){toast('⚠️ ต้องต่อเน็ตครั้งแรกเพื่อโหลดตัวช่วย Excel');return;}
+  if(typeof XLSX==='undefined'){toast('ต้องต่อเน็ตครั้งแรกเพื่อโหลดตัวช่วย Excel');return;}
   const rs=filtered();
-  if(!rs.length){toast('⚠️ ไม่มีรายการตามที่กรอง');return;}
+  if(!rs.length){toast('ไม่มีรายการตามที่กรอง');return;}
   const hdr=['ลำดับ','กิจการ','เลขนิติบุคคล','งบปี','สถานะงบ','วันที่ลงรายชื่อ','รายได้ของงบ',
     'ราคา (บาท)','หัก ณ ที่จ่าย 3%','รับสุทธิ','สถานะเงิน','ค้างชำระ (บาท)','Auditor','Contact','หมายเหตุ'];
   const rows=rs.map((r,i)=>[i+1,r.company,r.taxId||'',r.fyEnd?fmtD(r.fyEnd):'',isSigned(r)?'ลงชื่อแล้ว':'รอลงชื่อ',
@@ -1491,16 +1499,16 @@ function exportListExcel(){
   XLSX.utils.book_append_sheet(wb,ws,'รายการงบ '+curYear);
   const co=document.getElementById('fContact').value;
   const st=document.getElementById('fStatus');
-  const stTxt=st.value?' '+st.options[st.selectedIndex].text.replace(/[⏳✍️💸✅]/g,'').trim():'';
+  const stTxt=st.value?' '+st.options[st.selectedIndex].text.replace(/[]/g,'').trim():'';
   XLSX.writeFile(wb,'รายการงบ '+curYear+(co?' - '+co:'')+stTxt+'.xlsx');
-  toast('📤 Export แล้ว '+rs.length+' รายการ (มีสูตร)');
+  toast('Export แล้ว '+rs.length+' รายการ (มีสูตร)');
 }
 /* import their original Excel layout (header row contains กิจการ) */
 document.getElementById('impXlsx').addEventListener('change',e=>{
   const f=e.target.files[0];if(!f)return;
-  if(typeof XLSX==='undefined'){toast('⚠️ ต้องต่อเน็ตเพื่อโหลดตัวช่วย Excel');return;}
+  if(typeof XLSX==='undefined'){toast('ต้องต่อเน็ตเพื่อโหลดตัวช่วย Excel');return;}
   const rd=new FileReader();
-  rd.onload=()=>{try{importWB(XLSX.read(rd.result,{type:'array',cellDates:true}),f.name);}catch(err){console.error(err);toast('⚠️ อ่านไฟล์ไม่สำเร็จ');}};
+  rd.onload=()=>{try{importWB(XLSX.read(rd.result,{type:'array',cellDates:true}),f.name);}catch(err){console.error(err);toast('อ่านไฟล์ไม่สำเร็จ');}};
   rd.readAsArrayBuffer(f);e.target.value='';
 });
 /* เติมเลขนิติบุคคลอย่างเดียว จับคู่ด้วยชื่อกิจการ — ปลอดภัย ไม่สร้าง/ไม่ทับ field อื่น */
@@ -1509,7 +1517,7 @@ const _normC=s=>String(s||'').trim().toLowerCase().replace(/\s+/g,'');
 const _findCol=(hdr,cands)=>{for(let i=0;i<hdr.length;i++){const h=String(hdr[i]||'').trim().toLowerCase();if(cands.some(c=>h===c||h.includes(c)))return i;}return -1;};
 document.getElementById('impTaxT').addEventListener('change',e=>{
   const f=e.target.files[0];if(!f){return;}e.target.value='';
-  if(typeof XLSX==='undefined'){toast('⚠️ ต้องต่อเน็ตเพื่อโหลดตัวช่วย Excel');return;}
+  if(typeof XLSX==='undefined'){toast('ต้องต่อเน็ตเพื่อโหลดตัวช่วย Excel');return;}
   const rd=new FileReader();
   rd.onload=()=>{try{
     const wb=XLSX.read(new Uint8Array(rd.result),{type:'array'});
@@ -1519,16 +1527,16 @@ document.getElementById('impTaxT').addEventListener('change',e=>{
     const hdr=aoa[hi];
     const ci=_findCol(hdr,['ชื่อกิจการ','กิจการ','ชื่อ','company','name']);
     const ti=_findCol(hdr,['เลขนิติบุคคล','เลขทะเบียนนิติบุคคล','เลขประจำตัวผู้เสียภาษี','เลขผู้เสียภาษี','เลขภาษี','taxid','tax id']);
-    if(ci<0||ti<0){toast('⚠️ ไม่พบคอลัมน์ "กิจการ" หรือ "เลขนิติบุคคล" ในไฟล์');return;}
+    if(ci<0||ti<0){toast('ไม่พบคอลัมน์ "กิจการ" หรือ "เลขนิติบุคคล" ในไฟล์');return;}
     const map={};aoa.slice(hi+1).forEach(row=>{if(!row)return;const nm=_normC(row[ci]),tx=cleanTaxId(row[ti]);if(nm&&tx&&!map[nm])map[nm]=tx;});
     let upd=0;
     live().forEach(r=>{const tx=map[_normC(r.company)];if(tx&&r.taxId!==tx){r.taxId=tx;r.updatedAt=Date.now();upd++;}});
     const matched=new Set(live().map(r=>_normC(r.company)));
     const miss=Object.keys(map).filter(k=>!matched.has(k)).length;
-    if(!upd){toast('ℹ️ ไม่มีเลขนิติบุคคลใหม่ให้เติม'+(miss?' ('+miss+' กิจการไม่ตรงกับในระบบ)':''));return;}
+    if(!upd){toast('ไม่มีเลขนิติบุคคลใหม่ให้เติม'+(miss?' ('+miss+' กิจการไม่ตรงกับในระบบ)':''));return;}
     save();renderList();renderDash();
-    toast('🔢 เติมเลขนิติบุคคลแล้ว '+upd+' รายการ'+(miss?' · ข้าม '+miss+' กิจการ (ชื่อไม่ตรง)':''));
-  }catch(err){console.error(err);toast('⚠️ อ่านไฟล์ไม่สำเร็จ — ต้องเป็น Excel/CSV ที่ export จากแอปนี้');}};
+    toast('เติมเลขนิติบุคคลแล้ว '+upd+' รายการ'+(miss?' · ข้าม '+miss+' กิจการ (ชื่อไม่ตรง)':''));
+  }catch(err){console.error(err);toast('อ่านไฟล์ไม่สำเร็จ — ต้องเป็น Excel/CSV ที่ export จากแอปนี้');}};
   rd.readAsArrayBuffer(f);
 });
 function importWB(wb,fname){
@@ -1538,15 +1546,15 @@ function importWB(wb,fname){
   if(!yr)return;
   const aoa=XLSX.utils.sheet_to_json(wb.Sheets[sheet],{header:1,raw:false,dateNF:'yyyy-mm-dd'});
   let hi=aoa.findIndex(row=>row&&row.some(c=>String(c||'').includes('กิจการ')));
-  if(hi<0){toast('⚠️ ไม่พบหัวตาราง (คอลัมน์ "กิจการ")');return;}
+  if(hi<0){toast('ไม่พบหัวตาราง (คอลัมน์ "กิจการ")');return;}
   const hdr=aoa[hi].map(h=>String(h||'').replace(/\s+/g,''));
   const ix=name=>hdr.findIndex(h=>h===name.replace(/\s+/g,''));
   const gx=(row,...names)=>{for(const n of names){const i=ix(n);if(i>=0&&row[i]!=null&&row[i]!=='')return row[i];}return '';};
   const has=(...names)=>names.some(n=>ix(n)>=0);
   /* กันพลาด: ไฟล์ Export รายการ (ส่งลูกค้า) มีคอลัมน์ไม่ครบ (ไม่มี "วันที่แจ้ง") — import แบบเต็มจะลบข้อมูลหาย */
   if(!has('วันที่แจ้ง')){
-    toast('⚠️ ไฟล์นี้ไม่ใช่ไฟล์ Import เต็ม');
-    alert('❌ หยุดการนำเข้า — ไฟล์นี้ดูเหมือน “Export รายการงบ (สำหรับส่งลูกค้า)” ซึ่งมีคอลัมน์ไม่ครบ (ไม่มีคอลัมน์ วันที่แจ้ง/รับเงิน/เข้าระบบ/ผู้ช่วย)\n\nถ้า import แบบเต็มด้วยไฟล์นี้ ข้อมูลเหล่านั้นจะหาย!\n\n• ต้องการเติมเลขนิติบุคคล → ใช้ปุ่ม “Import เลขนิติบุคคล (เติมอย่างเดียว)”\n• ต้องการ import เต็ม → ใช้ไฟล์ที่ Export จากหน้าข้อมูล (Audit 25xx export.xlsx) ที่มีคอลัมน์ครบ');
+    toast('ไฟล์นี้ไม่ใช่ไฟล์ Import เต็ม');
+    alert('หยุดการนำเข้า — ไฟล์นี้ดูเหมือน “Export รายการงบ (สำหรับส่งลูกค้า)” ซึ่งมีคอลัมน์ไม่ครบ (ไม่มีคอลัมน์ วันที่แจ้ง/รับเงิน/เข้าระบบ/ผู้ช่วย)\n\nถ้า import แบบเต็มด้วยไฟล์นี้ ข้อมูลเหล่านั้นจะหาย!\n\n• ต้องการเติมเลขนิติบุคคล → ใช้ปุ่ม “Import เลขนิติบุคคล (เติมอย่างเดียว)”\n• ต้องการ import เต็ม → ใช้ไฟล์ที่ Export จากหน้าข้อมูล (Audit 25xx export.xlsx) ที่มีคอลัมน์ครบ');
     return;
   }
   const dt=parseDateBE; // ตัวแยกวันที่รวม (ISO พ.ศ./ค.ศ., d/m/y, m/d/y โดยแยกด้วยเลข >12)
@@ -1588,15 +1596,15 @@ function importWB(wb,fname){
   }
   mergeListsFromRecords();
   save();renderYearSel();renderDash();renderDataStat();
-  toast(`📥 นำเข้าแล้ว: ใหม่ ${added} / อัพเดท ${updated} (ปี ${yr})`);
+  toast(`นำเข้าแล้ว: ใหม่ ${added} / อัพเดท ${updated} (ปี ${yr})`);
 }
 function resetAll(){
-  if(syncCfg&&syncCfg.token){toast('⚠️ กำลัง Sync อยู่ — กด "เลิกเชื่อมต่อ" ก่อน ไม่งั้นข้อมูลจะถูกดึงกลับจาก cloud');return;}
+  if(syncCfg&&syncCfg.token){toast('กำลัง Sync อยู่ — กด "เลิกเชื่อมต่อ" ก่อน ไม่งั้นข้อมูลจะถูกดึงกลับจาก cloud');return;}
   if(!confirm('ลบข้อมูลทั้งหมด '+records.length+' รายการ แล้วกลับไปใช้ข้อมูลตั้งต้น?'))return;
   if(!confirm('ยืนยันอีกครั้ง — ข้อมูลที่แก้ไข/เพิ่มเองจะหายทั้งหมด'))return;
   records=(window.SEED_DATA||[]).map(r=>({...r,docs:{...r.docs}}));
   lists=null;normalizeData();
-  save();renderYearSel();renderDash();renderDataStat();toast('🗑️ ล้างข้อมูลแล้ว');
+  save();renderYearSel();renderDash();renderDataStat();toast('ล้างข้อมูลแล้ว');
 }
 function renderDataStat(){
   const ys=years();
@@ -1605,7 +1613,7 @@ function renderDataStat(){
 }
 
 /* ================= name lists manager ================= */
-const LIST_DEFS=[['auditors','👤 Auditor (ผู้ลงชื่อ)'],['contacts','🤝 Contact ลูกค้า'],['assistants','🧑‍💼 ชื่อผู้ช่วย']];
+const LIST_DEFS=[['auditors','Auditor (ผู้ลงชื่อ)'],['contacts','Contact ลูกค้า'],['assistants','ชื่อผู้ช่วย']];
 const CAT_FIELD={auditors:'auditor',contacts:'contact',assistants:'assistantName'};
 function countUses(cat,name){const f=CAT_FIELD[cat];return live().filter(r=>(r[f]||'')===name).length;}
 function renderLists(){
@@ -1617,8 +1625,8 @@ function renderLists(){
         const c=countUses(cat,n);
         return `<div style="display:flex;align-items:center;gap:8px;background:#f6f9fb;border-radius:9px;padding:7px 11px">
           <span style="flex:1;font-weight:600;font-size:13.5px">${esc(n)} <span style="color:var(--muted);font-weight:400">· ${c} งบ</span></span>
-          <button onclick="renameName('${cat}',${i})" style="border:none;background:#e1effe;color:#1e429f;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700">✏️ แก้ไข/รวม</button>
-          <button onclick="delName('${cat}',${i})" style="border:none;background:#fde8e8;color:#c81e1e;border-radius:8px;padding:5px 9px;font-size:12px;font-weight:700">✕</button>
+          <button onclick="renameName('${cat}',${i})" style="border:none;background:#e1effe;color:#1e429f;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700">แก้ไข/รวม</button>
+          <button onclick="delName('${cat}',${i})" style="border:none;background:#fde8e8;color:#c81e1e;border-radius:8px;padding:5px 9px;font-size:12px;font-weight:700"></button>
         </div>`;}).join('')||'<span style="color:var(--muted);font-size:13px">ยังไม่มีรายชื่อ</span>'}</div>
       <div style="display:flex;gap:8px">
         <input id="add_${cat}" placeholder="เพิ่มชื่อใหม่..." style="flex:1;padding:8px 11px;border:1.5px solid var(--line);border-radius:10px"
@@ -1630,7 +1638,7 @@ function renderLists(){
 function addName(cat){
   const el=document.getElementById('add_'+cat);const v=el.value.trim();
   if(!v)return;
-  if(lists[cat].includes(v)){toast('⚠️ มีชื่อนี้อยู่แล้ว');return;}
+  if(lists[cat].includes(v)){toast('มีชื่อนี้อยู่แล้ว');return;}
   lists[cat].push(v);lists[cat].sort();lists.updatedAt=Date.now();save();renderLists();toast('＋ เพิ่ม "'+v+'" แล้ว');
 }
 function renameName(cat,i){
@@ -1648,12 +1656,12 @@ function renameName(cat,i){
   save();renderLists();
   const pg=document.querySelector('.page.show').id;
   if(pg==='pg-dash')renderDash();else if(pg==='pg-list')renderList();
-  toast((existed?'🔗 รวมเป็น "':'✏️ เปลี่ยนเป็น "')+newN+'" ('+cnt+' งบ)');
+  toast((existed?'รวมเป็น "':'เปลี่ยนเป็น "')+newN+'" ('+cnt+' งบ)');
 }
 function delName(cat,i){
   const v=lists[cat][i];
   if(countUses(cat,v)>0&&!confirm('"'+v+'" ยังมีงบใช้อยู่ '+countUses(cat,v)+' งบ\nเอาออกจากลิสต์ตัวเลือก? (งบที่มีอยู่ไม่ถูกแก้)'))return;
-  lists[cat].splice(i,1);lists.updatedAt=Date.now();save();renderLists();toast('✕ เอา "'+v+'" ออกจากลิสต์แล้ว');
+  lists[cat].splice(i,1);lists.updatedAt=Date.now();save();renderLists();toast('เอา "'+v+'" ออกจากลิสต์แล้ว');
 }
 
 /* ================= cloud sync (GitHub) ================= */
@@ -1718,9 +1726,9 @@ function scheduleSync(){
   clearTimeout(syncTimer);syncTimer=setTimeout(()=>syncNow(false),4000);
 }
 async function syncNow(manual,retried){
-  if(!syncCfg||!syncCfg.token||!syncCfg.pin){if(manual){toast('⚠️ ยังไม่ได้ตั้งค่า Sync');showPage('pg-data');}return;}
+  if(!syncCfg||!syncCfg.token||!syncCfg.pin){if(manual){toast('ยังไม่ได้ตั้งค่า Sync');showPage('pg-data');}return;}
   if(syncing)return;
-  syncing=true;setSyncUI('⏳');
+  syncing=true;setSyncUI('busy');
   try{
     const remote=await ghGet();
     let sha=null;
@@ -1737,7 +1745,7 @@ async function syncNow(manual,retried){
     renderYearSel();
     const pg=document.querySelector('.page.show').id;
     if(pg==='pg-dash')renderDash();else if(pg==='pg-list')renderList();else if(pg==='pg-data')renderDataStat();
-    if(manual)toast('☁️ Sync สำเร็จ ('+fmtN(live().length)+' งบ)');
+    if(manual)toast('Sync สำเร็จ ('+fmtN(live().length)+' งบ)');
     loadCrmContacts().then(()=>{if(document.getElementById('pg-form').classList.contains('show'))fillDatalists();});
   }catch(err){
     console.error('sync:',err);
@@ -1750,14 +1758,14 @@ async function syncNow(manual,retried){
         if(t!==syncCfg.token){syncCfg.token=t;saveSync();return syncNow(manual,true);}
       }catch(e){}
     }
-    if(String(err.name)==='OperationError'){setSyncUI('err');if(manual)toast('⚠️ PIN ไม่ตรงกับข้อมูลบน cloud');return;}
+    if(String(err.name)==='OperationError'){setSyncUI('err');if(manual)toast('PIN ไม่ตรงกับข้อมูลบน cloud');return;}
     setSyncUI('err');
-    if(manual)toast('⚠️ Sync ไม่สำเร็จ: '+err.message);
+    if(manual)toast('Sync ไม่สำเร็จ: '+err.message);
   }finally{syncing=false;}
 }
 function setSyncUI(st){
-  const b=document.getElementById('syncBtn');
-  b.textContent=st==='⏳'?'⏳':st==='err'?'☁️⚠️':st==='ok'?'☁️✓':'☁️';
+  const b=document.getElementById('syncBtn');if(!b)return;
+  b.dataset.s=st==='busy'?'busy':st==='err'?'err':st==='ok'?'ok':'';
   if(document.getElementById('pg-data').classList.contains('show'))renderSyncBox();
 }
 function syncTap(){(syncCfg&&syncCfg.token)?syncNow(true):showPage('pg-data');}
@@ -1766,10 +1774,10 @@ function renderSyncBox(){
   const el=document.getElementById('syncBox');
   if(syncCfg&&syncCfg.token){
     el.innerHTML=`
-      <div style="font-weight:800;color:var(--green);margin-bottom:4px">🟢 เชื่อมต่อแล้ว</div>
+      <div style="font-weight:800;color:var(--green);margin-bottom:4px">เชื่อมต่อแล้ว</div>
       <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">แก้ไขอะไรจะส่งขึ้น cloud อัตโนมัติ (เข้ารหัสด้วย PIN ก่อนส่ง) · Sync ล่าสุด: ${fmtTime(syncCfg.lastSync)}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn btn-p" style="width:auto;padding:9px 18px;font-size:13.5px" onclick="syncNow(true)">🔄 Sync ตอนนี้</button>
+        <button class="btn btn-p" style="width:auto;padding:9px 18px;font-size:13.5px" onclick="syncNow(true)">Sync ตอนนี้</button>
         <button class="btn btn-g" style="padding:9px 18px;font-size:13.5px" onclick="disconnectSync()">เลิกเชื่อมต่อเครื่องนี้</button>
       </div>`;
   }else if(window.SYNC_TOKEN_ENC){
@@ -1777,7 +1785,7 @@ function renderSyncBox(){
       <div style="font-size:13px;line-height:1.6;margin-bottom:10px">เว็บนี้ฝังกุญแจ Sync ไว้แล้ว (เข้ารหัสด้วย PIN) — แค่ใส่ PIN ครั้งเดียว เครื่องนี้จะ sync กับทุกเครื่องอัตโนมัติ</div>
       <div style="display:flex;gap:8px">
         <input id="syncPinOnly" inputmode="numeric" placeholder="PIN" autocomplete="off" style="flex:1;padding:9px 10px;border:1.5px solid var(--line);border-radius:10px" onkeydown="if(event.key==='Enter')pinConnect()">
-        <button class="btn btn-p" style="width:auto;padding:9px 20px;font-size:13.5px" onclick="pinConnect()">🔗 เชื่อมต่อ</button>
+        <button class="btn btn-p" style="width:auto;padding:9px 20px;font-size:13.5px" onclick="pinConnect()">เชื่อมต่อ</button>
       </div>`;
   }else{
     el.innerHTML=`
@@ -1790,30 +1798,30 @@ function renderSyncBox(){
         5. กด Generate token แล้ว copy (ขึ้นต้น <code>github_pat_</code>) มาวางด้านล่าง</div>
       <div style="margin-bottom:8px"><label>Token (github_pat_...)</label><input id="syncToken" placeholder="github_pat_xxxx..." autocomplete="off" style="width:100%;padding:9px 10px;border:1.5px solid var(--line);border-radius:10px"></div>
       <div style="margin-bottom:12px"><label>PIN (ตัวเดียวกับตอนเปิดแอป)</label><input id="syncPin" inputmode="numeric" placeholder="PIN" autocomplete="off" style="width:100%;padding:9px 10px;border:1.5px solid var(--line);border-radius:10px" value="${esc(window._lastPin||'')}"></div>
-      <button class="btn btn-p" onclick="connectSync()">🔗 เชื่อมต่อ</button>
+      <button class="btn btn-p" onclick="connectSync()">เชื่อมต่อ</button>
       <div style="font-size:11.5px;color:var(--muted);margin-top:8px">Token กับ PIN ถูกเก็บไว้ในเครื่องนี้เท่านั้น ไม่ถูกอัพขึ้นเว็บ</div>`;
   }
 }
 async function pinConnect(){
   const pin=document.getElementById('syncPinOnly').value.trim();
-  if(!pin){toast('⚠️ ใส่ PIN ก่อน');return;}
-  toast('⏳ กำลังเชื่อมต่อ...');
+  if(!pin){toast('ใส่ PIN ก่อน');return;}
+  toast('กำลังเชื่อมต่อ...');
   const ok=await autoConnectSync(pin);
-  if(ok){window._lastPin=pin;renderSyncBox();toast('☁️ เชื่อม Sync แล้ว');}
-  else toast('⚠️ PIN ไม่ถูกต้อง');
+  if(ok){window._lastPin=pin;renderSyncBox();toast('เชื่อม Sync แล้ว');}
+  else toast('PIN ไม่ถูกต้อง');
 }
 async function connectSync(){
   const token=document.getElementById('syncToken').value.trim();
   const pin=document.getElementById('syncPin').value.trim();
-  if(!token||!pin){toast('⚠️ ใส่ Token และ PIN ให้ครบ');return;}
+  if(!token||!pin){toast('ใส่ Token และ PIN ให้ครบ');return;}
   syncCfg={token,pin,salt:null,lastSync:null};
-  toast('⏳ กำลังทดสอบการเชื่อมต่อ...');
+  toast('กำลังทดสอบการเชื่อมต่อ...');
   try{
     const res=await fetch('https://api.github.com/repos/tpnaudit/audit-tracker',{headers:ghHdr()});
     if(!res.ok)throw new Error('token ใช้ไม่ได้ (HTTP '+res.status+')');
     saveSync();renderSyncBox();
     await syncNow(true);
-  }catch(err){syncCfg=null;localStorage.removeItem(SYNC_KEY);toast('⚠️ เชื่อมต่อไม่สำเร็จ: '+err.message);}
+  }catch(err){syncCfg=null;localStorage.removeItem(SYNC_KEY);toast('เชื่อมต่อไม่สำเร็จ: '+err.message);}
 }
 function disconnectSync(){
   if(!confirm('เลิก Sync เครื่องนี้? (ข้อมูลในเครื่องยังอยู่ และข้อมูลบน cloud ไม่ถูกลบ)'))return;
@@ -1850,10 +1858,10 @@ async function tryUnlock(){
   const msg=document.getElementById('pinMsg');
   if(!pin){msg.textContent='กรุณาใส่รหัส';return;}
   if(!(window.crypto&&crypto.subtle)){msg.textContent='ต้องเปิดผ่าน https เท่านั้น';return;}
-  msg.textContent='⏳ กำลังปลดล็อค...';msg.style.color='var(--muted)';
+  msg.textContent='กำลังปลดล็อค...';msg.style.color='var(--muted)';
   if(unlockMode==='sync'){
     const ok=await autoConnectSync(pin);
-    if(ok){window._lastPin=pin;document.getElementById('unlock').style.display='none';toast('☁️ เชื่อม Sync แล้ว — กำลังดึงข้อมูลล่าสุด');}
+    if(ok){window._lastPin=pin;document.getElementById('unlock').style.display='none';toast('เชื่อม Sync แล้ว — กำลังดึงข้อมูลล่าสุด');}
     else{msg.style.color='var(--red)';msg.textContent='รหัสไม่ถูกต้อง ลองใหม่อีกครั้ง';}
     return;
   }
@@ -1863,7 +1871,7 @@ async function tryUnlock(){
     window._lastPin=pin;
     save();
     document.getElementById('unlock').style.display='none';
-    initApp();toast('🔓 โหลดข้อมูลแล้ว '+records.length+' รายการ');
+    initApp();toast('โหลดข้อมูลแล้ว '+records.length+' รายการ');
     autoConnectSync(pin); // มีกุญแจฝังอยู่ → เชื่อม sync ต่อเลยเงียบๆ
   }catch(err){msg.style.color='var(--red)';msg.textContent='รหัสไม่ถูกต้อง ลองใหม่อีกครั้ง';}
 }
