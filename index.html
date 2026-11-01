@@ -461,8 +461,12 @@ nav button:hover{color:var(--navy)}
     </div>
 
     <div class="fsec" id="feeSec">ค่าสอบบัญชี</div>
+    <div class="frow half bk-only" style="display:none">
+      <div><label>ค่าบริการ / เดือน</label><input id="f_bkMonthly" type="number" inputmode="decimal" step="any" value="0"></div>
+      <div><label>จำนวนเดือน</label><input id="f_bkMonths" type="number" inputmode="numeric" step="1" min="0" value="12"></div>
+    </div>
     <div class="frow">
-      <div><label>ราคา (บาท)</label><input id="f_fee" type="number" inputmode="decimal" step="any"></div>
+      <div><label id="lbFee">ราคา (บาท)</label><input id="f_fee" type="number" inputmode="decimal" step="any"></div>
       <div><label>Incentive</label><input id="f_incentive" type="number" inputmode="decimal" step="any" value="0"></div>
       <div><label>หัก ณ ที่จ่าย (อัตโนมัติ 3%)</label><input id="f_wht" type="number" inputmode="decimal" step="any"></div>
       <div><label>ค่าจ้างผู้ช่วย</label><input id="f_assistantFee" type="number" inputmode="decimal" step="any" value="0"></div>
@@ -1215,7 +1219,7 @@ function renderList(){
         ${isAudit(r)&&guessStmt(r)==='liq'?'<span class="badge b-red">งบเลิกกิจการ</span>':''}
         ${isAudit(r)&&signedBeforeNotified(r)?'<span class="badge b-red">ลงชื่อก่อนจองชื่อ</span>':''}
       </div>
-      <div class="dts">แจ้ง ${fmtD(r.dateNotified)} · งบปี ${fmtD(r.fyEnd)}${r.datePaid?' · รับเงิน '+fmtD(r.datePaid):''}${r.incentive?' · Incentive '+fmtB(r.incentive):''}${r.assistantFee?' · ผู้ช่วย '+fmtB(r.assistantFee)+(r.assistantName?' ('+esc(r.assistantName)+')':''):''}${r.commission?' · ค่า ref '+fmtB(r.commission)+(r.commissionPct?' ('+r.commissionPct+'%)':''):''}${r.auditorShare?' · แบ่งผู้สอบ '+fmtB(r.auditorShare)+' / เรา '+fmtB(r.poomShare||0):''}${r.note?' · '+esc(r.note):''}</div>
+      <div class="dts">แจ้ง ${fmtD(r.dateNotified)} · งบปี ${fmtD(r.fyEnd)}${jt(r)==='bookkeeping'&&r.bkMonthly?' · '+fmtB(r.bkMonthly)+'/ด. × '+(r.bkMonths||0)+' ด.':''}${r.datePaid?' · รับเงิน '+fmtD(r.datePaid):''}${r.incentive?' · Incentive '+fmtB(r.incentive):''}${r.assistantFee?' · ผู้ช่วย '+fmtB(r.assistantFee)+(r.assistantName?' ('+esc(r.assistantName)+')':''):''}${r.commission?' · ค่า ref '+fmtB(r.commission)+(r.commissionPct?' ('+r.commissionPct+'%)':''):''}${r.auditorShare?' · แบ่งผู้สอบ '+fmtB(r.auditorShare)+' / เรา '+fmtB(r.poomShare||0):''}${r.note?' · '+esc(r.note):''}</div>
       <div class="docs">${docs}</div>
       ${selMode?'':`<div class="acts">
         ${isAudit(r)&&!isSigned(r)?`<button class="a-sign" onclick="quickSign('${r.id}')">ลงชื่อวันนี้</button>`:''}
@@ -1327,12 +1331,24 @@ function applyJobType(){
   document.getElementById('jtHint').textContent=hints[t]||'';
   const feeLb={audit:'ค่าสอบบัญชี',healthcheck:'ค่าบริการ',bookkeeping:'ค่าทำบัญชี',consult:'ค่าที่ปรึกษา',register:'ค่าจดทะเบียน',broker:'ค่านายหน้า (ส่วนที่เราได้)'};
   document.getElementById('feeSec').textContent=feeLb[t]||'ค่าบริการ';
+  const bk=(t==='bookkeeping');
+  document.querySelectorAll('#pg-form .bk-only').forEach(el=>el.style.display=bk?'':'none');
+  document.getElementById('lbFee').textContent=bk?'รวมทั้งปี (คิดจากค่า/เดือน อัตโนมัติ)':'ราคา (บาท)';
+  F('f_fee').readOnly=bk;F('f_fee').style.background=bk?'#f0f4f5':'';
+  if(bk)bkCalc();
   document.getElementById('lbDateNotified').textContent=aud?'วันที่แจ้ง':'วันที่รับงาน';
   document.getElementById('lbCompany').textContent=aud?'ชื่อกิจการ *':'ชื่อลูกค้า/กิจการ *';
   if(!aud){F('f_inSystem').checked=false;F('f_signedFlag').checked=false;setDF('f_dateSigned','');F('splitRow').style.display='none';}
   if(!whtTouched)autoWht();
   updNet();
 }
+/* ทำบัญชี: ราคา = ค่า/เดือน × จำนวนเดือน (คิดเฉพาะเมื่อกรอกค่า/เดือน จะได้ไม่ทับราคาเดิมของเรคคอร์ดเก่า) */
+function bkCalc(){
+  const m=(+F('f_bkMonthly').value||0),n=(+F('f_bkMonths').value||0);
+  if(m>0){F('f_fee').value=Math.round(m*n*100)/100;if(!whtTouched)autoWht();}
+  updNet();
+}
+['f_bkMonthly','f_bkMonths'].forEach(id=>F(id).addEventListener('input',bkCalc));
 F('f_fee').addEventListener('input',()=>{if(!whtTouched)autoWht();if(!commManual)commFromPct();updNet();});
 let whtTouched=false,commManual=false;
 F('f_wht').addEventListener('input',()=>{whtTouched=true;updNet();});
@@ -1425,7 +1441,7 @@ function prefillFromId(id){
   const keepContact=document.getElementById('prevContact').value;
   resetForm();
   document.getElementById('prevContact').value=keepContact;fillPrevCompanies();
-  F('f_jobType').value=jt(r);applyJobType();
+  F('f_jobType').value=jt(r);F('f_bkMonthly').value=r.bkMonthly||0;F('f_bkMonths').value=r.bkMonths||(jt(r)==='bookkeeping'?12:0);applyJobType();
   F('f_company').value=r.company;F('f_taxId').value=r.taxId||'';
   F('f_year').value=r.year+1;
   F('f_auditor').value=r.auditor||'Poom';F('f_contact').value=r.contact||'';
@@ -1484,6 +1500,7 @@ function resetForm(){
   F('f_inSystem').checked=false;F('f_paid').checked=false;F('f_signedFlag').checked=false;
   Object.keys(DOCS).forEach(k=>F('f_doc_'+k).value='no');
   setDF('f_dateNotified',todayBE());whtTouched=false;F('splitRow').style.display='none';
+  F('f_bkMonthly').value=0;F('f_bkMonths').value=12;
   F('f_jobType').value='audit';applyJobType();
   fillDatalists();fillPrevList();updNet();
 }
@@ -1491,7 +1508,7 @@ function editRec(id){
   const r=findRec(id);if(!r)return;
   resetForm();
   document.getElementById('formTitle').textContent='แก้ไข: '+r.company;
-  F('f_jobType').value=jt(r);
+  F('f_jobType').value=jt(r);F('f_bkMonthly').value=r.bkMonthly||0;F('f_bkMonths').value=r.bkMonths||(jt(r)==='bookkeeping'?12:0);
   F('f_id').value=r.id;F('f_company').value=r.company;F('f_taxId').value=r.taxId||'';F('f_year').value=r.year;
   F('f_auditor').value=r.auditor||'Poom';F('f_contact').value=r.contact||'';F('f_month').value=r.month||'';
   setDF('f_fyEnd',r.fyEnd);setDF('f_dateNotified',r.dateNotified);setDF('f_dateSigned',r.dateSigned);
@@ -1523,7 +1540,7 @@ function saveForm(){
     year:+F('f_year').value||curYear,company,taxId:F('f_taxId').value.trim(),
     auditor:F('f_auditor').value.trim()||'Poom',contact:F('f_contact').value.trim(),
     month:+F('f_month').value||null,fyEnd:getDF('f_fyEnd'),dateNotified:getDF('f_dateNotified'),
-    jobType:F('f_jobType').value||'audit',
+    jobType:F('f_jobType').value||'audit',bkMonthly:+F('f_bkMonthly').value||0,bkMonths:+F('f_bkMonths').value||0,
     dateSigned:getDF('f_dateSigned'),signedFlag:F('f_signedFlag').checked,opinion:F('f_opinion').value,revenue:F('f_revenue').value,stmtType:F('f_stmtType').value,inSystem:F('f_inSystem').checked,
     fee:+F('f_fee').value||0,incentive:+F('f_incentive').value||0,wht:+F('f_wht').value||0,
     assistantFee:+F('f_assistantFee').value||0,assistantName:F('f_assistantName').value.trim(),
