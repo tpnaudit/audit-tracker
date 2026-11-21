@@ -502,6 +502,10 @@ button:focus-visible,select:focus-visible,a:focus-visible{outline:2px solid #1a8
       <div class="ck"><input type="checkbox" id="f_inSystem"><span>เข้าระบบ (ยื่นภาษี)</span></div>
       <div class="ck"><input type="checkbox" id="f_signedFlag"><span>ลงชื่อแล้ว (ไม่ระบุวันที่)</span></div>
     </div>
+    <div class="frow half" id="tfacRow" style="display:none">
+      <div class="ck"><input type="checkbox" id="f_tfac"><span>หจก. นี้นับใน TFAC</span></div>
+      <div style="display:flex;align-items:center"><span style="font-size:11.5px;color:var(--muted);line-height:1.45">หจก. ไม่นับในการ์ด TFAC เว้นแต่ติ๊กช่องนี้ (ห้างใหญ่: ทุนเกิน 5 ล้าน / สินทรัพย์หรือรายได้เกิน 30 ล้าน) · เลือกรายได้เกิน 30 ล้านจะติ๊กให้เอง</span></div>
+    </div>
 
     <div class="fsec" id="feeSec">ค่าสอบบัญชี</div>
     <div class="frow half bk-only" style="display:none">
@@ -637,6 +641,10 @@ const JT={audit:'สอบบัญชี',healthcheck:'Health Check',bookkeepin
 const JTBADGE={healthcheck:'b-blue',bookkeeping:'b-green',consult:'b-gray',register:'b-blue',broker:'b-amber'};
 const jt=r=>r.jobType||'audit';
 const isAudit=r=>jt(r)==='audit';
+/* TFAC: บริษัทนับทุกงาน · หจก. นับเฉพาะห้างใหญ่ (r.tfac ติ๊กเอง ไม่ระบุ = ดูจากรายได้เกิน 30 ล้าน) */
+const isPartner=c=>/^\s*(หจก|ห้างหุ้นส่วน)/.test(c||'');
+const bigRev=v=>/30–300|เกิน 300/.test(v||'');
+const countsTFAC=r=>isAudit(r)&&(!isPartner(r.company)||(typeof r.tfac==='boolean'?r.tfac:bigRev(r.revenue)));
 const fmtB=n=>'฿'+(Math.round(n)).toLocaleString('th-TH');
 const fmtN=n=>n.toLocaleString('th-TH');
 if(typeof Chart!=='undefined'){Chart.defaults.font.family="'IBM Plex Sans Thai',system-ui,sans-serif";Chart.defaults.color='#5d6b73';}
@@ -802,7 +810,8 @@ function renderDash(){
   const assistTot=rs.reduce((s,r)=>s+(r.assistantFee||0)+(r.auditorShare||0),0);
   const poomTot=rs.reduce((s,r)=>s+poomNet(r),0);
   const netTot=rs.reduce((s,r)=>s+net(r),0);
-  const inTFAC=auditRs.filter(r=>parseDateBE(r.dateNotified));   // เข้าระบบ TFAC = มีวันแจ้ง (เฉพาะงานสอบ)
+  const tfacRs=auditRs.filter(countsTFAC),ptnOut=auditRs.length-tfacRs.length; // หจก. เล็กไม่นับ TFAC
+  const inTFAC=tfacRs.filter(r=>parseDateBE(r.dateNotified));   // เข้าระบบ TFAC = มีวันแจ้ง (เฉพาะงานสอบที่นับ TFAC)
   const inTFACSigned=inTFAC.filter(isSigned);
   /* hero band — โมเมนต์สรุป */
   const paidPoom=rs.filter(r=>r.paid).reduce((s,r)=>s+poomNet(r),0);
@@ -828,7 +837,7 @@ function renderDash(){
     <div class="kpi rd"><div class="lb">ค้างรับเงิน</div><div class="v">${fmtB(unpaidAmt)}</div><div class="sub">${fmtN(rs.filter(r=>!r.paid).length)} งบ</div></div>
     <div class="kpi am"><div class="lb">จ่ายผู้ช่วย+ส่วนแบ่ง</div><div class="v">${fmtB(assistTot)}</div><div class="sub">ค่าผู้ช่วย + ผู้สอบอื่น</div></div>
     <div class="kpi bl"><div class="lb">เฉลี่ยรับสุทธิ/งบ</div><div class="v">${fmtB(rs.length?netTot/rs.length:0)}</div><div class="sub">รับสุทธิรวม ÷ ${fmtN(rs.length)} งบ</div></div>
-    <div class="kpi"><div class="lb">เข้าระบบ TFAC</div><div class="v">${fmtN(inTFAC.length)}</div><div class="sub">มีวันแจ้งแล้ว · ${auditRs.length?Math.round(inTFAC.length/auditRs.length*100):0}% ของงานสอบ</div></div>
+    <div class="kpi"><div class="lb">เข้าระบบ TFAC</div><div class="v">${fmtN(inTFAC.length)}</div><div class="sub">มีวันแจ้งแล้ว · ${tfacRs.length?Math.round(inTFAC.length/tfacRs.length*100):0}% ของงานสอบ${ptnOut?' · ไม่รวม หจก. '+fmtN(ptnOut)+' งาน':''}</div></div>
     <div class="kpi gd"><div class="lb">TFAC · ลงนามแล้ว</div><div class="v">${fmtN(inTFACSigned.length)}</div><div class="sub">${inTFAC.length?Math.round(inTFACSigned.length/inTFAC.length*100):0}% ของที่เข้า TFAC</div></div>`;
 
   /* ===== รายได้แยกตามประเภทงาน (แสดงเมื่อมีมากกว่า 1 ประเภท) ===== */
@@ -1374,6 +1383,15 @@ function autoStmt(){if(!stmtTouched){const iso=getDF('f_fyEnd');F('f_stmtType').
 ['f_fee','f_incentive','f_wht','f_assistantFee'].forEach(id=>F(id).addEventListener('input',updNet));
 /* หัก ณ ที่จ่าย 3% — คิดให้เฉพาะรายที่ "เข้าระบบ (ยื่นภาษี)" เท่านั้น ถ้าไม่เข้าระบบ = 0 */
 function autoWht(){const base=(+F('f_fee').value||0);const on=(F('f_jobType').value!=='audit')||F('f_inSystem').checked;F('f_wht').value=(on&&base>0)?Math.round(base*0.03*100)/100:0;}
+let tfacTouched=false;
+function updTfacRow(){
+  const show=F('f_jobType').value==='audit'&&isPartner(F('f_company').value);
+  F('tfacRow').style.display=show?'':'none';
+  if(show&&!tfacTouched)F('f_tfac').checked=bigRev(F('f_revenue').value);
+}
+F('f_company').addEventListener('input',updTfacRow);
+F('f_revenue').addEventListener('change',updTfacRow);
+F('f_tfac').addEventListener('change',()=>{tfacTouched=true;});
 function applyJobType(){
   const t=F('f_jobType').value,aud=(t==='audit');
   document.querySelectorAll('#pg-form .audit-only').forEach(el=>el.style.display=aud?'':'none');
@@ -1389,6 +1407,7 @@ function applyJobType(){
   document.getElementById('lbDateNotified').textContent=aud?'วันที่แจ้ง':'วันที่รับงาน';
   document.getElementById('lbCompany').textContent=aud?'ชื่อกิจการ *':'ชื่อลูกค้า/กิจการ *';
   if(!aud){F('f_inSystem').checked=false;F('f_signedFlag').checked=false;setDF('f_dateSigned','');F('splitRow').style.display='none';}
+  updTfacRow();
   if(!whtTouched)autoWht();
   updNet();
 }
@@ -1548,6 +1567,7 @@ function resetForm(){
   ['f_fee','f_incentive','f_wht','f_assistantFee','f_poomShare','f_auditorShare','f_commPct','f_commAmt'].forEach(id=>F(id).value=0);
   commManual=false;F('f_stmtType').value='op';stmtTouched=false;auditorShareTouched=false;
   F('f_inSystem').checked=false;F('f_paid').checked=false;F('f_signedFlag').checked=false;
+  F('f_tfac').checked=false;tfacTouched=false;
   Object.keys(DOCS).forEach(k=>F('f_doc_'+k).value='no');
   setDF('f_dateNotified',todayBE());whtTouched=false;F('splitRow').style.display='none';
   F('f_bkMonthly').value=0;F('f_bkMonths').value=12;
@@ -1563,6 +1583,7 @@ function editRec(id){
   F('f_auditor').value=r.auditor||'Poom';F('f_contact').value=r.contact||'';F('f_month').value=r.month||'';
   setDF('f_fyEnd',r.fyEnd);setDF('f_dateNotified',r.dateNotified);setDF('f_dateSigned',r.dateSigned);
   F('f_opinion').value=r.opinion||'';F('f_revenue').value=r.revenue||'';F('f_inSystem').checked=!!r.inSystem;F('f_signedFlag').checked=!!r.signedFlag;
+  tfacTouched=typeof r.tfac==='boolean';F('f_tfac').checked=countsTFAC({...r,jobType:'audit'});updTfacRow();
   F('f_fee').value=r.fee||0;F('f_incentive').value=r.incentive||0;F('f_wht').value=r.wht||0;
   F('f_assistantFee').value=r.assistantFee||0;F('f_assistantName').value=r.assistantName||'';
   F('f_commPct').value=r.commissionPct||0;F('f_commAmt').value=r.commission||0;commManual=!(r.commissionPct>0)&&(r.commission>0);
@@ -1608,6 +1629,7 @@ function saveForm(){
     note:F('f_note').value.trim(),
     updatedAt:Date.now(),
   });
+  if(isPartner(company)&&rec.jobType==='audit'&&tfacTouched)rec.tfac=F('f_tfac').checked;else delete rec.tfac; // ไม่ติ๊กเอง = อัตโนมัติจากรายได้
   if(!id)records.push(rec);
   normalizeData();
   const addTo=(arr,v)=>{if(v&&!arr.includes(v)){arr.push(v);arr.sort();}};
